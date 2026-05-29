@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0C0A0E">
+  <title>The Palace — 2nd Edition</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<div id="loading-bar"></div>
+<div id="error-banner" hidden></div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
+  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
+  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
+</nav>
+
+<div class="status-bar">
+  <button id="refresh-btn" title="Refresh now">↻</button>
+  <span id="last-updated">Loading…</span>
+</div>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-crest">
+      <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <!-- Outer ring -->
+        <circle cx="80" cy="80" r="76" stroke="#C8A24A" stroke-width="1.5" stroke-dasharray="4 3"/>
+        <circle cx="80" cy="80" r="70" stroke="#7A6230" stroke-width="0.75"/>
+        <!-- Crown base -->
+        <path d="M38 95 L38 108 L122 108 L122 95 Z" fill="#C8A24A"/>
+        <path d="M42 108 L118 108 L118 112 L42 112 Z" fill="#7A6230"/>
+        <!-- Crown points -->
+        <path d="M38 95 L38 65 L52 80 L65 55 L80 72 L95 55 L108 80 L122 65 L122 95 Z" fill="#C8A24A"/>
+        <!-- Crown gems -->
+        <circle cx="65" cy="68" r="4" fill="#E8C46A"/>
+        <circle cx="80" cy="62" r="5" fill="#E8C46A"/>
+        <circle cx="95" cy="68" r="4" fill="#E8C46A"/>
+        <!-- Cup inside crown -->
+        <path d="M66 82 Q64 90 68 93 L92 93 Q96 90 94 82 Z" fill="#0C0A0E"/>
+        <path d="M66 82 L94 82 L92 88 L68 88 Z" fill="#1C1828"/>
+        <rect x="76" y="93" width="8" height="4" rx="1" fill="#0C0A0E"/>
+        <rect x="70" y="97" width="20" height="2" rx="1" fill="#0C0A0E"/>
+        <!-- Stars -->
+        <text x="80" y="128" text-anchor="middle" font-family="serif" font-size="10"
+              fill="#C8A24A" letter-spacing="2">✦ THE PALACE ✦</text>
+        <text x="80" y="142" text-anchor="middle" font-family="serif" font-size="7.5"
+              fill="#7A6230" letter-spacing="3">2ND EDITION</text>
+      </svg>
+    </div>
+    <div class="hero-edition">2nd Edition</div>
+    <h1 class="hero-title serif">The Palace</h1>
+    <div class="hero-divider"></div>
+    <div class="hero-details">
+      📍 <strong>MySeyon — The Palace</strong><br>
+      🗓 Saturday 30 May 2026 &nbsp;·&nbsp; 🕛 Kick-off 12:00
+    </div>
+  </div>
+
+  <!-- LIVE / NEXT -->
+  <div class="card" id="live-card">
+    <div class="card-title"><span class="icon">⚡</span>Live &amp; Next Up</div>
+    <div id="live-content"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+  </div>
+
+  <!-- POOL LEADERS SNAPSHOT -->
+  <div class="section-divider">Pool Leaders</div>
+  <div class="snapshot-grid" id="leaders-grid">
+    <div class="snap-card"><div class="snap-label">Pool A Leader</div><div class="snap-value" id="leader-a">—</div><div class="snap-sub" id="leader-a-pts">—</div></div>
+    <div class="snap-card"><div class="snap-label">Pool B Leader</div><div class="snap-value" id="leader-b">—</div><div class="snap-sub" id="leader-b-pts">—</div></div>
+  </div>
+
+  <!-- ON FIRE SNAPSHOT -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🔥</span>On Fire — Hottest Right Now</div>
+    <div id="fire-snapshot"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+  </div>
+
+  <!-- HISTORY TEASER -->
+  <div class="card">
+    <div class="card-title"><span class="icon">📖</span>The Story So Far</div>
+    <p style="font-size:.875rem;line-height:1.7">
+      The 1st Edition crowned <strong class="text-gold">Zackary &amp; Lalaina</strong> as champions —
+      but this year they line up on <em>opposite sides</em>: Zackary rides with Tamu,
+      Lalaina with Daniel. The reigning champions are rivals now. 👀
+    </p>
+    <p style="font-size:.875rem;line-height:1.7;margin-top:.5rem">
+      Meanwhile the <strong class="text-ember">On Fire</strong> throne sits empty after
+      <strong class="text-gold">Paolo</strong>'s dominant 1st-Edition run.
+      Twenty players. One table. Who burns brightest this edition?
+    </p>
+    <a href="halloffame.html" style="display:inline-block;margin-top:.75rem;font-size:.8rem;color:var(--gold);text-decoration:none">
+      View Hall of Fame →
+    </a>
+  </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/app.js"></script>
+<script>
+function render(c) {
+  // Live / Next
+  const liveEl = document.getElementById("live-content");
+  let html = "";
+
+  if (c.live.length > 0) {
+    html += c.live.map(oopMatchRow).join("");
+  }
+
+  if (c.next.length > 0) {
+    html += `<div class="section-divider" style="margin-top:${c.live.length?'.75rem':'0'}">Up next</div>`;
+    html += c.next.map(oopMatchRow).join("");
+  }
+
+  if (!c.live.length && !c.next.length) {
+    // check if tournament is over
+    const finalMatch = c.bracket["F"];
+    if (finalMatch?.winner) {
+      html = `<p style="text-align:center;font-size:.9rem;padding:.5rem 0">
+        🏆 <strong class="text-gold">Tournament complete!</strong> Champions:
+        <strong>${teamLabel(finalMatch.winner)}</strong>
+      </p>`;
+    } else {
+      html = `<p class="text-muted" style="font-size:.85rem">No live or upcoming matches yet.</p>`;
+    }
+  }
+  liveEl.innerHTML = html;
+
+  // Pool leaders
+  const la = c.standings.A[0];
+  const lb = c.standings.B[0];
+  document.getElementById("leader-a").textContent = la ? teamLabel(la.id) : "—";
+  document.getElementById("leader-a-pts").textContent = la ? `${la.points} pts · ${la.diff > 0 ? "+" : ""}${la.diff} diff` : "—";
+  document.getElementById("leader-b").textContent = lb ? teamLabel(lb.id) : "—";
+  document.getElementById("leader-b-pts").textContent = lb ? `${lb.points} pts · ${lb.diff > 0 ? "+" : ""}${lb.diff} diff` : "—";
+
+  // On Fire snapshot
+  const fireEl = document.getElementById("fire-snapshot");
+  const top = c.onfire.filter(p => p.count > 0).slice(0, 3);
+  if (top.length === 0) {
+    fireEl.innerHTML = `<p class="text-muted" style="font-size:.85rem">No activations yet — the first flame hasn't been lit.</p>`;
+  } else {
+    const leader = top[0];
+    fireEl.innerHTML = `
+      <div style="margin-bottom:.5rem">
+        <span style="font-size:1.5rem">🔥</span>
+        <strong style="font-size:1rem;color:var(--ember-light)">${leader.player}</strong>
+        <span class="text-muted" style="font-size:.8rem"> — ${leader.count} activation${leader.count!==1?"s":""} · Hottest at The Palace</span>
+      </div>
+      ${top.slice(1).map(p => `<div style="font-size:.85rem;color:var(--text-muted);padding:.15rem 0">
+        🔸 ${p.player} <span style="color:var(--gold)">${p.count}</span></div>`).join("")}
+      <a href="onfire.html" style="display:inline-block;margin-top:.6rem;font-size:.8rem;color:var(--gold);text-decoration:none">Full leaderboard →</a>`;
+  }
+}
+
+initPage(render);
+</script>
+</body>
+</html>

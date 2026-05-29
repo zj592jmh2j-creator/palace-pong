@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0C0A0E">
+  <title>Standings — The Palace 2nd Edition</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<div id="loading-bar"></div>
+<div id="error-banner" hidden></div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
+  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
+  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
+</nav>
+
+<div class="status-bar">
+  <button id="refresh-btn" title="Refresh now">↻</button>
+  <span id="last-updated">Loading…</span>
+</div>
+
+<div class="page-header">
+  <h1>Standings</h1>
+  <div class="subtitle">Points → Cup Diff → Cups For → Alphabetical</div>
+</div>
+
+<main>
+
+  <!-- KEY -->
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.72rem;color:var(--text-muted)">
+    <span>P = Played</span>
+    <span>W/D/L = Win/Draw/Loss</span>
+    <span>F = Cups For</span>
+    <span>A = Cups Against</span>
+    <span><strong class="text-gold">Diff</strong> = Tiebreak</span>
+    <span><strong class="text-gold">Pts</strong> = Points</span>
+  </div>
+  <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:1rem">
+    ↑ = Advances to knockouts &nbsp;|&nbsp; Dimmed = Eliminated (4th/5th)
+  </div>
+
+  <!-- POOL A -->
+  <div class="pool-label">Pool A</div>
+  <div class="card" style="padding:.5rem">
+    <div id="standings-a"><p class="text-muted" style="font-size:.85rem;padding:.5rem">Loading…</p></div>
+  </div>
+
+  <!-- POOL B -->
+  <div class="pool-label" style="margin-top:.75rem">Pool B</div>
+  <div class="card" style="padding:.5rem">
+    <div id="standings-b"><p class="text-muted" style="font-size:.85rem;padding:.5rem">Loading…</p></div>
+  </div>
+
+  <!-- BRACKET -->
+  <div class="section-divider">Knockout Bracket</div>
+  <div id="bracket-view"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/app.js"></script>
+<script>
+function renderStandingsTable(rows) {
+  const header = `
+    <table class="standings-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Team</th>
+          <th>P</th>
+          <th>W</th>
+          <th>D</th>
+          <th>L</th>
+          <th>F</th>
+          <th>A</th>
+          <th style="color:var(--gold)">Diff</th>
+          <th style="color:var(--gold)">Pts</th>
+        </tr>
+      </thead>
+      <tbody>`;
+  const rowsHtml = rows.map(r => {
+    const advancing = r.rank <= 3;
+    const eliminated = r.rank >= 4;
+    const rankHtml = `<span class="rank-badge rank-${r.rank}">${r.rank}</span>`;
+    return `
+      <tr class="${advancing ? 'advancing' : ''} ${eliminated ? 'eliminated' : ''}">
+        <td>${rankHtml}</td>
+        <td>${teamLabel(r.id)}</td>
+        <td>${r.played}</td>
+        <td>${r.wins}</td>
+        <td>${r.draws}</td>
+        <td>${r.losses}</td>
+        <td>${r.cupsFor}</td>
+        <td>${r.cupsAgainst}</td>
+        <td>${diffDisplay(r.diff)}</td>
+        <td class="pts">${r.points}</td>
+      </tr>`;
+  }).join("");
+  return header + rowsHtml + `</tbody></table>`;
+}
+
+function renderBracket(bracket, standings) {
+  const rounds = [
+    { key: "QF", label: "Quarter-Finals", ids: ["QF1","QF2"] },
+    { key: "SF", label: "Semi-Finals",    ids: ["SF1","SF2"] },
+    { key: "Final", label: "⚜ The Final", ids: ["F"] }
+  ];
+
+  return rounds.map(r => {
+    const matchesHtml = r.ids.map(id => {
+      const b = bracket[id];
+      if (!b) return "";
+      const bs = BRACKET_STRUCTURE.find(x => x.id === id);
+      const home = b.homeId ? teamLabel(b.homeId) : slotTbd(bs.homeSlot);
+      const away = b.awayId ? teamLabel(b.awayId) : slotTbd(bs.awaySlot);
+      const isWon = b.status === "final";
+      const hWin = isWon && b.winner === b.homeId;
+      const aWin = isWon && b.winner === b.awayId;
+      const score = scoreLine(b.cupsHome, b.cupsAway, b.status);
+      return `
+        <div class="bracket-match ${id === 'F' ? 'final' : ''}">
+          <div class="match-label">${b.label}</div>
+          <div class="match-teams">
+            <span class="team-name ${hWin?'winner':(isWon?'loser':'')}">${home}</span>
+            ${score}
+            <span class="team-name ${aWin?'winner':(isWon?'loser':'')}">${away}</span>
+          </div>
+          ${statusBadge(b.status)}
+          ${b.suddenDeathWinner ? `<div style="font-size:.7rem;color:var(--ember-light);margin-top:.25rem">⚡ Sudden death: ${teamLabel(b.suddenDeathWinner)}</div>` : ""}
+        </div>`;
+    }).join("");
+
+    return `<div class="bracket-section">
+      <div class="bracket-round-label">${r.label}</div>
+      ${matchesHtml}
+    </div>`;
+  }).join("");
+}
+
+function slotTbd(slot) {
+  if (!slot) return "TBD";
+  if (slot.match(/^[AB]\d$/)) return `${slot} · TBD`;
+  const m = slot.match(/^winner(QF\d|SF\d)$/);
+  if (m) return `Winner ${m[1]}`;
+  return slot;
+}
+
+function render(c) {
+  document.getElementById("standings-a").innerHTML = renderStandingsTable(c.standings.A);
+  document.getElementById("standings-b").innerHTML = renderStandingsTable(c.standings.B);
+  document.getElementById("bracket-view").innerHTML = renderBracket(c.bracket, c.standings);
+}
+
+initPage(render);
+</script>
+</body>
+</html>

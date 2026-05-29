@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0C0A0E">
+  <title>Schedule — The Palace 2nd Edition</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<div id="loading-bar"></div>
+<div id="error-banner" hidden></div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
+  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
+  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
+</nav>
+
+<div class="status-bar">
+  <button id="refresh-btn" title="Refresh now">↻</button>
+  <span id="last-updated">Loading…</span>
+</div>
+
+<div class="page-header">
+  <h1>Order of Play</h1>
+  <div class="subtitle">Saturday 30 May 2026 · first throw 12:30 PM · auto-updates every 30 s</div>
+</div>
+
+<main>
+  <!-- POOL STAGE -->
+  <div class="section-divider">Pool Stage · 12:30 – 4:30 PM</div>
+  <div class="card" id="pool-list">
+    <p class="text-muted" style="font-size:.85rem">Loading…</p>
+  </div>
+
+  <!-- KNOCKOUT -->
+  <div class="section-divider">Knockout Stage · 4:30 – 5:30 PM</div>
+  <div class="card" id="ko-list">
+    <p class="text-muted" style="font-size:.85rem">Loading…</p>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/app.js"></script>
+<script>
+function render(c) {
+  const pool = c.orderOfPlay.filter(m => !m.isKO);
+  const ko   = c.orderOfPlay.filter(m => m.isKO);
+  document.getElementById("pool-list").innerHTML =
+    pool.length ? pool.map(oopMatchRow).join("") : `<p class="text-muted" style="font-size:.85rem">No matches.</p>`;
+  document.getElementById("ko-list").innerHTML =
+    ko.length ? ko.map(oopMatchRow).join("") : `<p class="text-muted" style="font-size:.85rem">No matches.</p>`;
+}
+
+initPage(render);
+</script>
+</body>
+</html>

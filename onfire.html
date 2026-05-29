@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0C0A0E">
+  <title>On Fire — The Palace 2nd Edition</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<div id="loading-bar"></div>
+<div id="error-banner" hidden></div>
+
+<nav class="bottom-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
+  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
+  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
+</nav>
+
+<div class="status-bar">
+  <button id="refresh-btn" title="Refresh now">↻</button>
+  <span id="last-updated">Loading…</span>
+</div>
+
+<div class="page-header">
+  <h1>🔥 On Fire</h1>
+  <div class="subtitle">Score on 2 consecutive turns → declare it → it counts here</div>
+</div>
+
+<main>
+
+  <!-- RULE REMINDER -->
+  <div class="rules-note" style="margin-bottom:1rem">
+    <strong>On Fire rule:</strong> score on <strong>2 consecutive turns</strong> → declare "On Fire!" → your count rises by 1.
+    Score a <strong>3rd consecutive turn</strong> → retain possession and keep shooting until you miss.
+  </div>
+
+  <!-- THEME SONG -->
+  <a class="theme-song" href="https://open.spotify.com/track/3u5N55tHf7hXATSQrjBh2q?si=3b5363d1abd34518"
+     target="_blank" rel="noopener">
+    <span class="ts-icon">🎵</span>
+    <span class="ts-text">
+      <span class="ts-title">Follow that tune</span>
+      <span class="ts-sub">The official On Fire theme song</span>
+    </span>
+    <span class="ts-arrow">↗</span>
+  </a>
+
+  <!-- LEADER PANEL -->
+  <div id="leader-panel">
+    <div class="onfire-leader">
+      <div class="flame-icon">🔥</div>
+      <div class="leader-name">—</div>
+      <div class="leader-team">—</div>
+      <div class="leader-count">—</div>
+      <div class="leader-label">activations</div>
+    </div>
+  </div>
+
+  <!-- FULL LEADERBOARD -->
+  <div class="card">
+    <div class="card-title"><span class="icon">🏅</span>All Players</div>
+    <div id="onfire-list"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+  </div>
+
+  <!-- 1ST EDITION NOTE -->
+  <div class="card" style="border-color:var(--gold-dim)">
+    <div class="card-title"><span class="icon">👑</span>1st Edition On Fire Champion</div>
+    <p style="font-size:.9rem">
+      <strong class="text-gold">Paolo</strong>
+      <span class="text-muted"> — the original flame-keeper. The benchmark has been set.</span>
+    </p>
+    <p style="font-size:.8rem;color:var(--text-muted);margin-top:.4rem">
+      Paolo returns this edition alongside Malik. Can he defend his crown?
+    </p>
+  </div>
+
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/app.js"></script>
+<script>
+function render(c) {
+  const players = c.onfire;
+  const maxCount = players[0]?.count || 0;
+
+  // Leader panel
+  const leaderPanel = document.getElementById("leader-panel");
+  if (maxCount > 0) {
+    const leader = players[0];
+    leaderPanel.innerHTML = `
+      <div class="onfire-leader">
+        <div class="flame-icon">🔥</div>
+        <div class="leader-name">${leader.player}</div>
+        <div class="leader-team">${leader.teamLabel} · Pool ${leader.pool}</div>
+        <div class="leader-count">${leader.count}</div>
+        <div class="leader-label">activation${leader.count !== 1 ? "s" : ""} · Hottest at The Palace</div>
+      </div>`;
+  } else {
+    leaderPanel.innerHTML = `
+      <div class="onfire-leader" style="opacity:.5">
+        <div class="flame-icon">🫥</div>
+        <div class="leader-name" style="font-size:1rem;color:var(--text-muted)">No activations yet</div>
+        <div class="leader-team" style="font-size:.8rem">The first flame is waiting to be lit</div>
+      </div>`;
+  }
+
+  // Full list
+  const listEl = document.getElementById("onfire-list");
+  if (!players.length) {
+    listEl.innerHTML = `<p class="text-muted" style="font-size:.85rem">No data.</p>`;
+    return;
+  }
+
+  listEl.innerHTML = players.map((p, i) => {
+    const barWidth = maxCount > 0 ? Math.round((p.count / maxCount) * 100) : 0;
+    const isZero = p.count === 0;
+    const rankIcon = i === 0 && p.count > 0 ? "🔥"
+                   : i === 1 && p.count > 0 ? "🔸"
+                   : i === 2 && p.count > 0 ? "🔹"
+                   : `<span style="font-size:.75rem">${i+1}</span>`;
+    return `
+      <div class="onfire-row ${isZero ? 'onfire-zero' : ''}">
+        <div class="onfire-rank">${rankIcon}</div>
+        <div class="onfire-player">
+          <div class="name">${p.player}</div>
+          <div class="team-tag">${p.teamLabel} · Pool ${p.pool}</div>
+        </div>
+        <div class="onfire-bar-wrap">
+          <div class="onfire-bar" style="width:${barWidth}%"></div>
+        </div>
+        <div class="onfire-count">${p.count}</div>
+      </div>`;
+  }).join("");
+}
+
+initPage(render);
+</script>
+</body>
+</html>
