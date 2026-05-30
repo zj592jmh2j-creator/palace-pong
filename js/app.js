@@ -114,8 +114,11 @@ function matchRow(homeId, awayId, cupsHome, cupsAway, status, label) {
 }
 
 function winnerClass(teamId, myCups, theirCups, status) {
-  if (status !== "final" || myCups === null || theirCups === null) return "";
-  return myCups > theirCups ? "winner" : (myCups < theirCups ? "loser" : "");
+  if (status !== "final") return "";
+  const res = cupResult(myCups, theirCups); // "home" = my side won
+  if (res === "home") return "winner";
+  if (res === "away") return "loser";
+  return ""; // draw or no data
 }
 
 function diffDisplay(diff) {
@@ -128,10 +131,10 @@ function diffDisplay(diff) {
 function oopWinnerId(m) {
   if (m.status !== "final") return null;
   if (m.winner) return m.winner;                       // KO winner (incl. sudden death)
-  if (m.cupsHome === null || m.cupsAway === null) return null;
-  if (m.cupsHome > m.cupsAway) return m.homeId;
-  if (m.cupsAway > m.cupsHome) return m.awayId;
-  return null;                                          // pool draw
+  const res = cupResult(m.cupsHome, m.cupsAway);
+  if (res === "home") return m.homeId;
+  if (res === "away") return m.awayId;
+  return null;                                          // draw (neither cleared)
 }
 
 // Renders one match row from a computed order-of-play object (with slot + time).

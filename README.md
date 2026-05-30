@@ -46,7 +46,13 @@ Seed all 20 rows exactly as below. Leave `status`, `cupsHome`, `cupsAway` blank 
 | PB10 | B    | 10    | nata-ashley      | paolo-malik      |        |          |          |
 
 **`status` values:** `upcoming` · `live` · `final`
-**`cupsHome` / `cupsAway`:** cups that team *eliminated* from the opponent (0–6). Higher = better. Never inverted.
+
+**`cupsHome` / `cupsAway`:** each team's **cups remaining (0–6)** at the end of the match. Never inverted — `cupsHome` is always the team in the `home` column.
+
+**Result rule:**
+- A team on **`0`** was cleared → **it loses**, the other team **wins**.
+- If **neither** team is `0` → it's a **draw** (time ran out, nobody cleared). Points: Win 3, Draw 1, Loss 0.
+- The **differential** is `cupsHome − cupsAway`, so e.g. a `2–1` is a **draw** worth 1 point each, but the team on 2 banks a **+1 differential** for tiebreaks.
 
 ---
 
@@ -154,15 +160,17 @@ The site will be live at `https://YOUR_USERNAME.github.io/palace-pong/`.
 3. Save — the site shows a pulsing **● LIVE** badge within 30 s
 
 ### When a match ends
-1. Set `cupsHome` and `cupsAway` to the final cups eliminated by each side (0–6)
+1. Set `cupsHome` / `cupsAway` to each team's **cups remaining (0–6)**. The team that got cleared is **`0`** (it loses); if neither is `0` it's a **draw**.
 2. Set `status` → `final`
 3. Save — standings update automatically
 
 ### Knockout sudden-death tiebreak
-If a knockout match ends level (cups equal, time ran out), play sudden death. After the winner is decided:
+A knockout can't end in a draw. If **neither** team reached `0` when time ran out (e.g. `3–2`), play sudden death. After the winner is decided:
 1. Set `cupsHome` / `cupsAway` as they stood
 2. Set `status` → `final`
 3. Set `suddenDeathWinner` → the winning team's ID (e.g. `zackary-tamu`)
+
+(If one team *was* cleared to `0`, that's already a decisive result — no `suddenDeathWinner` needed.)
 
 ### On Fire
 When a player goes On Fire, increment their `count` in the `OnFire` tab by 1.

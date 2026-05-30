@@ -1,6 +1,20 @@
 // ─── COMPUTATION LAYER ───────────────────────────────────────────────────────
 // All logic derived from raw Sheet data + static config. No side-effects.
 
+// ── Result rule (single source of truth) ──────────────────────────────────────
+// Each cup number = a team's cups remaining at the final whistle.
+//   • A team on 0 has been cleared → it loses; the other team wins.
+//   • Neither on 0 → draw (time ran out, nobody cleared).
+// Returns "home" | "away" | "draw" | null (missing/invalid data).
+// Differential is handled separately as (cupsHome − cupsAway).
+function cupResult(ch, ca) {
+  if (ch == null || ca == null || Number.isNaN(ch) || Number.isNaN(ca)) return null;
+  if (ch === 0 && ca === 0) return "draw";   // degenerate, shouldn't occur
+  if (ca === 0) return "home";               // away cleared → home wins
+  if (ch === 0) return "away";               // home cleared → away wins
+  return "draw";                             // both still have cups → draw
+}
+
 // ── Pool Standings ────────────────────────────────────────────────────────────
 
 function computePoolStandings(poolMatches, pool) {
@@ -22,10 +36,11 @@ function computePoolStandings(poolMatches, pool) {
     stats[h].cupsFor   += ch; stats[h].cupsAgainst += ca;
     stats[a].cupsFor   += ca; stats[a].cupsAgainst += ch;
 
-    if (ch > ca)      { stats[h].wins++;  stats[h].points += 3; stats[a].losses++; }
-    else if (ca > ch) { stats[a].wins++;  stats[a].points += 3; stats[h].losses++; }
-    else              { stats[h].draws++; stats[h].points += 1;
-                        stats[a].draws++; stats[a].points += 1; }
+    const res = cupResult(ch, ca);
+    if (res === "home")      { stats[h].wins++;  stats[h].points += 3; stats[a].losses++; }
+    else if (res === "away") { stats[a].wins++;  stats[a].points += 3; stats[h].losses++; }
+    else                     { stats[h].draws++; stats[h].points += 1;
+                               stats[a].draws++; stats[a].points += 1; }
   }
 
   const rows = Object.values(stats).map(s => ({
@@ -84,10 +99,11 @@ function computeBracket(koRows, standings, poolComplete = { A: true, B: true }) 
     if (status === "final" && homeId && awayId) {
       if (sdw) {
         winner = sdw;
-      } else if (!isNaN(ch) && !isNaN(ca)) {
-        if (ch > ca) winner = homeId;
-        else if (ca > ch) winner = awayId;
-        // tied without sdw in KO = unresolved (shouldn't happen)
+      } else {
+        const res = cupResult(ch, ca);
+        if (res === "home") winner = homeId;
+        else if (res === "away") winner = awayId;
+        // "draw" (neither cleared) → unresolved; needs suddenDeathWinner
       }
     }
 
