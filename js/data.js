@@ -19,33 +19,27 @@ async function fetchTab(tabName) {
 }
 
 function parseCSV(text) {
-  // Use PapaParse if available (loaded via CDN), otherwise fall back to simple parser
+  // Parse rows as plain arrays — using PapaParse for robust quoted-field handling
+  // when available, our own splitter otherwise. We do the header→object mapping
+  // ourselves so that extra/blank trailing columns in the Sheet can't corrupt it.
+  // (PapaParse's header:true mode mis-handles duplicate empty column names and
+  //  swallows the first data row, which dropped match PA1.)
+  let rows;
   if (typeof Papa !== "undefined") {
-    const result = Papa.parse(text.trim(), {
-      header: true,
-      skipEmptyLines: true,
-      dynamicTyping: false
-    });
-    return result.data.map(row => {
-      const clean = {};
-      for (const k of Object.keys(row)) {
-        clean[k.trim()] = typeof row[k] === "string" ? row[k].trim() : row[k];
-      }
-      return clean;
-    });
+    rows = Papa.parse(text.trim(), { header: false, skipEmptyLines: true }).data;
+  } else {
+    rows = text.trim().split(/\r?\n/).map(splitCsvLine);
   }
-  // Fallback: simple RFC-4180 parser
-  return simpleParseCsv(text);
-}
+  if (!rows || rows.length < 2) return [];
 
-function simpleParseCsv(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
-  const headers = splitCsvLine(lines[0]);
-  return lines.slice(1).map(line => {
-    const vals = splitCsvLine(line);
+  const headers = rows[0].map(h => String(h == null ? "" : h).trim());
+  return rows.slice(1).map(cells => {
     const obj = {};
-    headers.forEach((h, i) => { obj[h.trim()] = (vals[i] || "").trim(); });
+    headers.forEach((h, i) => {
+      if (!h) return;                                  // ignore blank header columns
+      const v = cells[i];
+      obj[h] = (v == null ? "" : String(v)).trim();
+    });
     return obj;
   }).filter(row => Object.values(row).some(v => v !== ""));
 }
