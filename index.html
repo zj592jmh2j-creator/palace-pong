@@ -67,6 +67,9 @@
     </div>
   </div>
 
+  <!-- CHAMPIONS (shown once the Final is decided) -->
+  <div id="champions-banner" hidden></div>
+
   <!-- LIVE / NEXT -->
   <div class="card" id="live-card">
     <div class="card-title"><span class="icon">⚡</span>Live &amp; Next Up</div>
@@ -86,18 +89,25 @@
     <div id="fire-snapshot"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
   </div>
 
-  <!-- HISTORY TEASER -->
+  <!-- THE STORY -->
   <div class="card">
-    <div class="card-title"><span class="icon">📖</span>The Story So Far</div>
+    <div class="card-title"><span class="icon">📖</span>The Story of the 2nd Edition</div>
     <p style="font-size:.875rem;line-height:1.7">
-      The 1st Edition crowned <strong class="text-gold">Zackary &amp; Lalaina</strong> as champions —
-      but this year they line up on <em>opposite sides</em>: Zackary rides with Tamu,
-      Lalaina with Daniel. The reigning champions are rivals now. 👀
+      The 1st Edition belonged to <strong class="text-gold">Zackary &amp; Lalaina</strong> — and this year
+      The Palace split them as rivals, Zackary with Tamu, Lalaina with Daniel. Neither could repeat it.
     </p>
     <p style="font-size:.875rem;line-height:1.7;margin-top:.5rem">
-      Meanwhile the <strong class="text-ember">On Fire</strong> throne sits empty after
-      <strong class="text-gold">Paolo</strong>'s dominant 1st-Edition run.
-      Twenty players. One table. Who burns brightest this edition?
+      Instead the crown went to <strong class="text-gold">Luca &amp; Kenny</strong>. Luca was
+      <em>mathematical</em> — cold, precise, every cup accounted for. Kenny was the
+      <strong class="text-gold">underdog of the tournament</strong> who chose the biggest stage to
+      erupt, lighting <strong class="text-ember">two On Fires in the Final</strong> itself. They left with the
+      <strong>$100 prize</strong> and <strong>Wantanga FC Champion Shirts</strong>, presented by
+      President <strong class="text-gold">Sayor</strong>.
+    </p>
+    <p style="font-size:.875rem;line-height:1.7;margin-top:.5rem">
+      And the <strong class="text-ember">On Fire</strong> throne, vacant since <strong class="text-gold">Paolo</strong>'s
+      1st-Edition reign, was seized by <strong class="text-ember">Leonie</strong> — the hottest at The Palace,
+      who kept the flame burning even as her team fell in the Final.
     </p>
     <a href="halloffame.html" style="display:inline-block;margin-top:.75rem;font-size:.8rem;color:var(--gold);text-decoration:none">
       View Hall of Fame →
@@ -112,6 +122,35 @@
 <script src="js/app.js"></script>
 <script>
 function render(c) {
+  // Champions banner — appears once the Final is decided
+  const champEl = document.getElementById("champions-banner");
+  const finalWinner = c.bracket?.F?.winner || null;
+  const fireChamp = c.onfire.find(p => p.count > 0) || null;
+  if (finalWinner) {
+    champEl.hidden = false;
+    champEl.innerHTML = `
+      <div class="champions">
+        <div class="champ-crown">👑</div>
+        <div class="champ-eyebrow">2nd Edition · Champions of The Palace</div>
+        <div class="champ-name serif">${teamLabel(finalWinner)}</div>
+        <div class="champ-tag">🏆 Winners of the Final</div>
+        ${fireChamp ? `
+        <div class="champ-divider"></div>
+        <div class="champ-fire">
+          <span class="champ-fire-flame">🔥</span>
+          <div>
+            <div class="champ-fire-label">On Fire Champion</div>
+            <div class="champ-fire-name">${fireChamp.player}</div>
+            <div class="champ-fire-sub">${fireChamp.count} activation${fireChamp.count!==1?"s":""} · Hottest at The Palace</div>
+          </div>
+        </div>` : ""}
+        <div class="champ-prize">🎽 $100 &amp; Wantanga FC Champion Shirts — presented by President Sayor</div>
+      </div>`;
+  } else {
+    champEl.hidden = true;
+    champEl.innerHTML = "";
+  }
+
   // Live / Next
   const liveEl = document.getElementById("live-content");
   let html = "";

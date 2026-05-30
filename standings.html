@@ -121,9 +121,8 @@ function renderBracket(bracket, standings) {
     const matchesHtml = r.ids.map(id => {
       const b = bracket[id];
       if (!b) return "";
-      const bs = BRACKET_STRUCTURE.find(x => x.id === id);
-      const home = b.homeId ? teamLabel(b.homeId) : slotTbd(bs.homeSlot);
-      const away = b.awayId ? teamLabel(b.awayId) : slotTbd(bs.awaySlot);
+      const home = b.homeLabel;
+      const away = b.awayLabel;
       const isWon = b.status === "final";
       const hWin = isWon && b.winner === b.homeId;
       const aWin = isWon && b.winner === b.awayId;
@@ -146,14 +145,6 @@ function renderBracket(bracket, standings) {
       ${matchesHtml}
     </div>`;
   }).join("");
-}
-
-function slotTbd(slot) {
-  if (!slot) return "TBD";
-  if (slot.match(/^[AB]\d$/)) return `${slot} · TBD`;
-  const m = slot.match(/^winner(QF\d|SF\d)$/);
-  if (m) return `Winner ${m[1]}`;
-  return slot;
 }
 
 function render(c) {

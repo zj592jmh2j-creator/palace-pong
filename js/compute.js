@@ -87,8 +87,9 @@ function computeBracket(koRows, standings, poolComplete = { A: true, B: true }) 
   for (const bslot of BRACKET_STRUCTURE) {
     const sheetRow = koMap[bslot.id] || {};
 
-    const homeId = resolveSlot(bslot.homeSlot, standings, winners, poolComplete);
-    const awayId = resolveSlot(bslot.awaySlot, standings, winners, poolComplete);
+    const home = resolveBracketSlot(sheetRow.slotHome, bslot.homeSlot, standings, winners, poolComplete);
+    const away = resolveBracketSlot(sheetRow.slotAway, bslot.awaySlot, standings, winners, poolComplete);
+    const homeId = home.id, awayId = away.id;
 
     const status = sheetRow.status || "upcoming";
     const ch = parseInt(sheetRow.cupsHome, 10);
@@ -112,6 +113,7 @@ function computeBracket(koRows, standings, poolComplete = { A: true, B: true }) 
     resolved[bslot.id] = {
       ...bslot,
       homeId, awayId,
+      homeLabel: home.label, awayLabel: away.label,
       status,
       cupsHome: isNaN(ch) ? null : ch,
       cupsAway: isNaN(ca) ? null : ca,
@@ -135,6 +137,52 @@ function resolveSlot(slot, standings, winners, poolComplete) {
   const winnerMatch = slot.match(/^winner(QF\d|SF\d)$/);
   if (winnerMatch) return winners[winnerMatch[1]] ?? null;
   return null;
+}
+
+// Is this cell value naming a specific team? Accepts the team id ("luca-kenny")
+// or the players label in any casing/spacing ("Luca & Kenny", "luca kenny").
+function matchTeamToken(raw) {
+  if (!raw) return null;
+  if (teamById(raw)) return raw;
+  const norm = raw.toLowerCase().replace(/[^a-z]/g, "");
+  if (!norm) return null;
+  const t = TEAMS.find(tm =>
+    tm.id.replace(/-/g, "") === norm || tm.players.join("").toLowerCase() === norm);
+  return t ? t.id : null;
+}
+
+// Turn a free-typed seed code into the canonical form resolveSlot expects:
+//   "A2", "Pool A #2", "a #2" → "A2";  "Winner QF1", "winnerqf1" → "winnerQF1".
+function normalizeSlotCode(raw) {
+  if (!raw) return null;
+  const cleaned = raw.replace(/[()]/g, "").trim();   // "(winner QF1)" → "winner QF1"
+  const pool = cleaned.match(/^(?:pool\s*)?([AB])\s*#?\s*([1-5])$/i);
+  if (pool) return pool[1].toUpperCase() + pool[2];
+  const win = cleaned.match(/^winner\s*(QF\d|SF\d)$/i);
+  if (win) return "winner" + win[1].toUpperCase();
+  return null;
+}
+
+// Resolve one bracket slot, preferring what the organiser typed in the Sheet's
+// slotHome/slotAway cell, then falling back to the hardcoded structure code.
+// Returns { id, label }.
+function resolveBracketSlot(sheetVal, structSlot, standings, winners, poolComplete) {
+  const raw = (sheetVal || "").trim();
+
+  // 1) An explicit team typed into the cell → always honoured immediately.
+  const teamId = matchTeamToken(raw);
+  if (teamId) return { id: teamId, label: teamLabel(teamId) };
+
+  // 2) A seed code — from the cell if present, else the structure default.
+  //    Codes stay gated (pool slots only resolve once that pool is complete).
+  const code = normalizeSlotCode(raw) || (raw ? null : structSlot);
+  if (code) {
+    const id = resolveSlot(code, standings, winners, poolComplete);
+    return { id, label: id ? teamLabel(id) : slotDisplayLabel(code) };
+  }
+
+  // 3) Non-empty but unrecognised text → display it verbatim.
+  return { id: null, label: raw };
 }
 
 // ── On Fire ───────────────────────────────────────────────────────────────────
@@ -188,13 +236,11 @@ function computeOrderOfPlay(poolMatches, bracket) {
     const base = { slot: s.slot, id: s.id, start: s.start, end: s.end };
 
     if (b) {
-      const bs = BRACKET_STRUCTURE.find(x => x.id === s.id);
       return {
         ...base, isKO: true,
         phase: b.round, phaseLabel: PHASE_LABEL[b.round] || b.round,
         homeId: b.homeId, awayId: b.awayId,
-        homeLabel: b.homeId ? teamLabel(b.homeId) : slotDisplayLabel(bs.homeSlot),
-        awayLabel: b.awayId ? teamLabel(b.awayId) : slotDisplayLabel(bs.awaySlot),
+        homeLabel: b.homeLabel, awayLabel: b.awayLabel,
         status: b.status,
         cupsHome: b.cupsHome, cupsAway: b.cupsAway,
         winner: b.winner, suddenDeathWinner: b.suddenDeathWinner

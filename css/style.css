@@ -458,6 +458,62 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
 .hero-details { font-size: .92rem; color: var(--text-soft); margin-top: .6rem; line-height: 1.9; }
 .hero-details strong { color: var(--text); }
 
+/* ─── Champions banner (Home, post-Final) ───────────────────────────────────── */
+.champions {
+  position: relative; overflow: hidden;
+  text-align: center; margin-bottom: 1rem;
+  padding: 1.75rem 1.25rem 1.5rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--gold);
+  background:
+    radial-gradient(120% 130% at 50% -10%, rgba(245,221,154,.28) 0%, transparent 55%),
+    linear-gradient(160deg, rgba(200,162,74,.18) 0%, rgba(10,8,14,.92) 70%);
+  box-shadow: 0 0 60px -18px rgba(200,162,74,.6), var(--shadow-card);
+}
+.champions::after {
+  content: ""; position: absolute; inset: 5px; border-radius: 10px;
+  border: 1px solid var(--gold-hairline); pointer-events: none;
+}
+.champ-crown {
+  font-size: 2.75rem; line-height: 1;
+  filter: drop-shadow(0 4px 18px rgba(245,221,154,.6));
+  animation: champ-bob 3s ease-in-out infinite;
+}
+@keyframes champ-bob { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-4px)} }
+.champ-eyebrow {
+  font-size: .66rem; text-transform: uppercase; letter-spacing: .22em;
+  color: var(--gold-dim); font-weight: 700; margin-top: .6rem;
+}
+.champ-name {
+  font-family: var(--serif); font-weight: 800;
+  font-size: clamp(2rem, 8vw, 2.8rem); line-height: 1.05; margin-top: .15rem;
+  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold-light) 40%, var(--gold) 70%, var(--gold-dim) 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+  filter: drop-shadow(0 3px 22px rgba(200,162,74,.35));
+}
+.champ-tag {
+  font-size: .8rem; color: var(--gold-light); font-weight: 700;
+  margin-top: .4rem; letter-spacing: .02em;
+}
+.champ-divider {
+  width: 70px; height: 1px; margin: 1.1rem auto .9rem;
+  background: linear-gradient(90deg, transparent, var(--gold-hairline), transparent);
+}
+.champ-fire {
+  display: inline-flex; align-items: center; gap: .65rem; text-align: left;
+  background: var(--ember-bg); border: 1px solid rgba(232,93,32,.35);
+  border-radius: 12px; padding: .6rem .9rem;
+}
+.champ-fire-flame { font-size: 1.8rem; filter: drop-shadow(0 0 12px rgba(255,140,66,.6)); }
+.champ-fire-label { font-size: .6rem; text-transform: uppercase; letter-spacing: .14em; color: var(--text-muted); font-weight: 700; }
+.champ-fire-name { font-family: var(--serif); font-size: 1.25rem; font-weight: 700; color: var(--ember-glow); line-height: 1.1; }
+.champ-fire-sub { font-size: .68rem; color: var(--text-muted); }
+.champ-prize {
+  margin-top: 1rem; font-size: .72rem; color: var(--gold-dim);
+  letter-spacing: .02em; line-height: 1.5;
+}
+
 /* ─── Snapshot widgets (Home) ───────────────────────────────────────────────── */
 .snapshot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: 1rem; }
 .snap-card {
