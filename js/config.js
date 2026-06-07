@@ -2,16 +2,36 @@
 const SHEET_ID = "1r2geaaPt8pU1Jo5BFY38ZOz-d3WU0d7_Rt7FP6tkNmU";
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── WhatsApp contact (for "Sign up" & "Place bets" links) ──────────────────
+// Enter the organiser's number in international format, digits only —
+// country code + number, NO "+", spaces or dashes. e.g. "447911123456".
+const WHATSAPP_NUMBER = "15149843611";   // Sayor's WhatsApp (intl format, digits only)
+function whatsappUrl(message) {
+  if (!WHATSAPP_NUMBER) return "#";
+  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message || "")}`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 const TOURNAMENT = {
   name: "The Palace",
-  edition: "2nd Edition",
-  venue: "MySeyon — The Palace",
-  date: "Saturday 30 May 2026",
+  edition: "3rd Edition",
+  venue: "Outdoors — venue to be announced",
+  date: "Friday 12 June 2026",
   startTime: "12:00",
+  // "registration" = pre-tournament (teams TBD, schedule/standings stay-tuned).
+  // Switch to "live" once the Sheet is populated for this edition.
+  phase: "registration",
   cupsPerTeam: 6,
   formation: "3-2-1"
 };
 
+// Convenience flag used across pages to switch into pre-tournament UI.
+const REGISTRATION_MODE = TOURNAMENT.phase === "registration";
+
+// NOTE: TEAMS below is the 2nd-Edition roster, retained only for the Hall of
+// Fame / reigning-champion lookups. The 3rd-Edition rosters are TBD — the Teams
+// page shows placeholders while REGISTRATION_MODE is on. Replace these once the
+// new sign-ups are confirmed, then set TOURNAMENT.phase = "live".
 const TEAMS = [
   { id: "omar-toni",       pool: "A", players: ["Omar", "Toni"] },
   { id: "luca-kenny",      pool: "A", players: ["Luca", "Kenny"] },

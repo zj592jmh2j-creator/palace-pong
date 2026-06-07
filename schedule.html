@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
-  <title>Schedule — The Palace 2nd Edition</title>
+  <title>Schedule — The Palace 3rd Edition</title>
+  <link rel="icon" type="image/png" href="palace-logo.png">
+  <link rel="apple-touch-icon" href="palace-logo.png">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -30,20 +32,33 @@
 
 <div class="page-header">
   <h1>Order of Play</h1>
-  <div class="subtitle">Saturday 30 May 2026 · first throw 12:30 PM · auto-updates every 30 s</div>
+  <div class="subtitle" id="sched-subtitle">Auto-updates every 30 s</div>
 </div>
 
 <main>
-  <!-- POOL STAGE -->
-  <div class="section-divider">Pool Stage · 12:30 – 4:30 PM</div>
-  <div class="card" id="pool-list">
-    <p class="text-muted" style="font-size:.85rem">Loading…</p>
+  <!-- STAY-TUNED placeholder (registration mode) -->
+  <div id="reg-placeholder" hidden>
+    <div class="stay-tuned">
+      <span class="st-icon">📅</span>
+      <div class="st-title serif">Fixtures dropping soon</div>
+      <div class="st-sub">
+        The 3rd Edition order of play will appear here once teams are confirmed.
+        <strong>Friday 12 June 2026 · midday · outdoors.</strong>
+      </div>
+      <div class="poll-cta"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
+    </div>
   </div>
 
-  <!-- KNOCKOUT -->
-  <div class="section-divider">Knockout Stage · 4:30 – 5:30 PM</div>
-  <div class="card" id="ko-list">
-    <p class="text-muted" style="font-size:.85rem">Loading…</p>
+  <!-- LIVE schedule -->
+  <div id="live-schedule" hidden>
+    <div class="section-divider">Pool Stage</div>
+    <div class="card" id="pool-list">
+      <p class="text-muted" style="font-size:.85rem">Loading…</p>
+    </div>
+    <div class="section-divider">Knockout Stage</div>
+    <div class="card" id="ko-list">
+      <p class="text-muted" style="font-size:.85rem">Loading…</p>
+    </div>
   </div>
 </main>
 
@@ -53,6 +68,12 @@
 <script src="js/app.js"></script>
 <script>
 function render(c) {
+  document.getElementById("reg-placeholder").hidden = !REGISTRATION_MODE;
+  document.getElementById("live-schedule").hidden = REGISTRATION_MODE;
+  const signup = document.getElementById("signup-link");
+  if (signup) signup.href = whatsappUrl("Hi Sayor — I'd like to sign up for The Palace 3rd Edition (Fri 12 June). My team:");
+  if (REGISTRATION_MODE) return;
+
   const pool = c.orderOfPlay.filter(m => !m.isKO);
   const ko   = c.orderOfPlay.filter(m => m.isKO);
   document.getElementById("pool-list").innerHTML =

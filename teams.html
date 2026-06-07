@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
-  <title>Teams — The Palace 2nd Edition</title>
+  <title>Teams — The Palace 3rd Edition</title>
+  <link rel="icon" type="image/png" href="palace-logo.png">
+  <link rel="apple-touch-icon" href="palace-logo.png">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -21,26 +23,29 @@
 
 <div class="page-header">
   <h1>Teams</h1>
-  <div class="subtitle">10 teams · 20 players · 2 pools</div>
+  <div class="subtitle" id="teams-subtitle">3rd Edition · rosters to be confirmed</div>
 </div>
 
 <main>
 
-  <div class="section-divider">Pool A</div>
-  <div class="team-grid" id="pool-a-teams"></div>
+  <!-- REGISTRATION: TBD rosters + sign up -->
+  <div id="reg-teams" hidden>
+    <div class="stay-tuned" style="margin-bottom:1rem">
+      <span class="st-icon">👥</span>
+      <div class="st-title serif">Rosters to be determined</div>
+      <div class="st-sub">Grab a partner and claim one of the slots below. Confirmed teams appear here as they sign up.</div>
+      <div class="poll-cta"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
+    </div>
+    <div class="section-divider">Open Slots</div>
+    <div class="team-grid" id="tbd-teams"></div>
+  </div>
 
-  <div class="section-divider" style="margin-top:1.25rem">Pool B</div>
-  <div class="team-grid" id="pool-b-teams"></div>
-
-  <!-- Rivalry callout -->
-  <div class="card" style="margin-top:1.25rem;border-color:var(--gold-dim)">
-    <div class="card-title"><span class="icon">⚔️</span>The Rivalry to Watch</div>
-    <p style="font-size:.875rem;line-height:1.7">
-      Reigning champions <strong class="text-gold">Zackary</strong> and <strong class="text-gold">Lalaina</strong>
-      won it together in the 1st Edition — but this year they're on <em>opposite sides of the bracket</em>.
-      Zackary rides with <strong>Tamu</strong> in Pool B; Lalaina partners <strong>Daniel</strong>, also in Pool B.
-      They could meet as early as the pool stage. 👀
-    </p>
+  <!-- LIVE teams -->
+  <div id="live-teams" hidden>
+    <div class="section-divider">Pool A</div>
+    <div class="team-grid" id="pool-a-teams"></div>
+    <div class="section-divider" style="margin-top:1.25rem">Pool B</div>
+    <div class="team-grid" id="pool-b-teams"></div>
   </div>
 
 </main>
@@ -48,11 +53,9 @@
 <script src="js/config.js"></script>
 <script src="js/app.js"></script>
 <script>
-// Teams page is purely static — no Sheet data needed
 function renderPool(pool, containerId) {
   const teams = poolTeams(pool);
-  const container = document.getElementById(containerId);
-  container.innerHTML = teams.map(t => `
+  document.getElementById(containerId).innerHTML = teams.map(t => `
     <div class="team-card">
       <div class="pool-tag">Pool ${t.pool}</div>
       <div class="players">
@@ -61,15 +64,38 @@ function renderPool(pool, containerId) {
     </div>`).join("");
 }
 
-// Reigning 1st-Edition champions get a crown; the On Fire champion gets a flame.
+function renderTbd(containerId, count) {
+  let html = "";
+  for (let i = 1; i <= count; i++) {
+    html += `
+      <div class="team-card">
+        <div class="pool-tag">Team ${i}</div>
+        <div class="players">
+          <div class="player-row" style="color:var(--text-dim)">👤 TBD</div>
+          <div class="player-row" style="color:var(--text-dim)">👤 TBD</div>
+        </div>
+      </div>`;
+  }
+  document.getElementById(containerId).innerHTML = html;
+}
+
 function playerIcon(player) {
   if (player === "Lalaina" || player === "Zackary") return "👑";
   if (player === "Paolo") return "🔥";
   return "👤";
 }
 
-renderPool("A", "pool-a-teams");
-renderPool("B", "pool-b-teams");
+document.getElementById("reg-teams").hidden = !REGISTRATION_MODE;
+document.getElementById("live-teams").hidden = REGISTRATION_MODE;
+const signup = document.getElementById("signup-link");
+if (signup) signup.href = whatsappUrl("Hi Sayor — I'd like to sign up for The Palace 3rd Edition (Fri 12 June). My team:");
+
+if (REGISTRATION_MODE) {
+  renderTbd("tbd-teams", 10);
+} else {
+  renderPool("A", "pool-a-teams");
+  renderPool("B", "pool-b-teams");
+}
 </script>
 </body>
 </html>

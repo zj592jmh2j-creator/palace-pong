@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
-  <title>Standings — The Palace 2nd Edition</title>
+  <title>Standings — The Palace 3rd Edition</title>
+  <link rel="icon" type="image/png" href="palace-logo.png">
+  <link rel="apple-touch-icon" href="palace-logo.png">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -35,34 +37,53 @@
 
 <main>
 
-  <!-- KEY -->
-  <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.72rem;color:var(--text-muted)">
-    <span>P = Played</span>
-    <span>W/D/L = Win/Draw/Loss</span>
-    <span>F = Cups For</span>
-    <span>A = Cups Against</span>
-    <span><strong class="text-gold">Diff</strong> = Tiebreak</span>
-    <span><strong class="text-gold">Pts</strong> = Points</span>
-  </div>
-  <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:1rem">
-    ↑ = Advances to knockouts &nbsp;|&nbsp; Dimmed = Eliminated (4th/5th)
-  </div>
-
-  <!-- POOL A -->
-  <div class="pool-label">Pool A</div>
-  <div class="card" style="padding:.5rem">
-    <div id="standings-a"><p class="text-muted" style="font-size:.85rem;padding:.5rem">Loading…</p></div>
+  <!-- STAY-TUNED placeholder (registration mode) -->
+  <div id="reg-placeholder" hidden>
+    <div class="stay-tuned">
+      <span class="st-icon">🏆</span>
+      <div class="st-title serif">Standings start at first throw</div>
+      <div class="st-sub">
+        Pool tables and the knockout bracket will light up here once the 3rd Edition is underway.
+        <strong>Friday 12 June 2026 · midday · outdoors.</strong>
+      </div>
+      <div class="poll-cta"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
+      <div style="margin-top:1rem">
+        <a class="signup-btn" id="bet-link" href="#" target="_blank" rel="noopener">🎲 Bet on your winner</a>
+      </div>
+    </div>
   </div>
 
-  <!-- POOL B -->
-  <div class="pool-label" style="margin-top:.75rem">Pool B</div>
-  <div class="card" style="padding:.5rem">
-    <div id="standings-b"><p class="text-muted" style="font-size:.85rem;padding:.5rem">Loading…</p></div>
-  </div>
+  <!-- LIVE standings -->
+  <div id="live-standings" hidden>
+    <!-- KEY -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;font-size:.72rem;color:var(--text-muted)">
+      <span>P = Played</span>
+      <span>W/D/L = Win/Draw/Loss</span>
+      <span>F = Cups For</span>
+      <span>A = Cups Against</span>
+      <span><strong class="text-gold">Diff</strong> = Tiebreak</span>
+      <span><strong class="text-gold">Pts</strong> = Points</span>
+    </div>
+    <div style="font-size:.72rem;color:var(--text-muted);margin-bottom:1rem">
+      ↑ = Advances to knockouts &nbsp;|&nbsp; Dimmed = Eliminated (4th/5th)
+    </div>
 
-  <!-- BRACKET -->
-  <div class="section-divider">Knockout Bracket</div>
-  <div id="bracket-view"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+    <!-- POOL A -->
+    <div class="pool-label">Pool A</div>
+    <div class="card" style="padding:.5rem">
+      <div id="standings-a"><p class="text-muted" style="font-size:.85rem;padding:.5rem">Loading…</p></div>
+    </div>
+
+    <!-- POOL B -->
+    <div class="pool-label" style="margin-top:.75rem">Pool B</div>
+    <div class="card" style="padding:.5rem">
+      <div id="standings-b"><p class="text-muted" style="font-size:.85rem;padding:.5rem">Loading…</p></div>
+    </div>
+
+    <!-- BRACKET -->
+    <div class="section-divider">Knockout Bracket</div>
+    <div id="bracket-view"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+  </div>
 
 </main>
 
@@ -148,6 +169,12 @@ function renderBracket(bracket, standings) {
 }
 
 function render(c) {
+  document.getElementById("reg-placeholder").hidden = !REGISTRATION_MODE;
+  document.getElementById("live-standings").hidden = REGISTRATION_MODE;
+  const bet = document.getElementById("bet-link");
+  if (bet) bet.href = whatsappUrl("Hi Sayor — I'd like to bet on the winner of The Palace 3rd Edition. My pick:");
+  if (REGISTRATION_MODE) return;
+
   document.getElementById("standings-a").innerHTML = renderStandingsTable(c.standings.A);
   document.getElementById("standings-b").innerHTML = renderStandingsTable(c.standings.B);
   document.getElementById("bracket-view").innerHTML = renderBracket(c.bracket, c.standings);

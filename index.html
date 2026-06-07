@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
-  <title>The Palace — 2nd Edition</title>
+  <title>The Palace — 3rd Edition</title>
+  <link rel="icon" type="image/png" href="palace-logo.png">
+  <link rel="apple-touch-icon" href="palace-logo.png">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -33,60 +35,53 @@
   <!-- HERO -->
   <div class="hero">
     <div class="hero-crest">
-      <svg viewBox="0 0 160 160" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <!-- Outer ring -->
-        <circle cx="80" cy="80" r="76" stroke="#C8A24A" stroke-width="1.5" stroke-dasharray="4 3"/>
-        <circle cx="80" cy="80" r="70" stroke="#7A6230" stroke-width="0.75"/>
-        <!-- Crown base -->
-        <path d="M38 95 L38 108 L122 108 L122 95 Z" fill="#C8A24A"/>
-        <path d="M42 108 L118 108 L118 112 L42 112 Z" fill="#7A6230"/>
-        <!-- Crown points -->
-        <path d="M38 95 L38 65 L52 80 L65 55 L80 72 L95 55 L108 80 L122 65 L122 95 Z" fill="#C8A24A"/>
-        <!-- Crown gems -->
-        <circle cx="65" cy="68" r="4" fill="#E8C46A"/>
-        <circle cx="80" cy="62" r="5" fill="#E8C46A"/>
-        <circle cx="95" cy="68" r="4" fill="#E8C46A"/>
-        <!-- Cup inside crown -->
-        <path d="M66 82 Q64 90 68 93 L92 93 Q96 90 94 82 Z" fill="#0C0A0E"/>
-        <path d="M66 82 L94 82 L92 88 L68 88 Z" fill="#1C1828"/>
-        <rect x="76" y="93" width="8" height="4" rx="1" fill="#0C0A0E"/>
-        <rect x="70" y="97" width="20" height="2" rx="1" fill="#0C0A0E"/>
-        <!-- Stars -->
-        <text x="80" y="128" text-anchor="middle" font-family="serif" font-size="10"
-              fill="#C8A24A" letter-spacing="2">✦ THE PALACE ✦</text>
-        <text x="80" y="142" text-anchor="middle" font-family="serif" font-size="7.5"
-              fill="#7A6230" letter-spacing="3">2ND EDITION</text>
-      </svg>
+      <img src="palace-logo.png" alt="The Palace — Beer Pong Tournament, Est. 2026">
     </div>
-    <div class="hero-edition">2nd Edition</div>
-    <h1 class="hero-title serif">The Palace</h1>
+    <div class="hero-edition">3rd Edition</div>
     <div class="hero-divider"></div>
     <div class="hero-details">
-      📍 <strong>MySeyon — The Palace</strong><br>
-      🗓 Saturday 30 May 2026 &nbsp;·&nbsp; 🕛 Kick-off 12:00
+      🗓 <strong>Friday 12 June 2026</strong> &nbsp;·&nbsp; 🕛 Midday (12:00)<br>
+      📍 <strong>Outdoors</strong> — venue to be announced
     </div>
   </div>
 
-  <!-- CHAMPIONS (shown once the Final is decided) -->
+  <!-- REGISTRATION: next-edition advert + sign up -->
+  <div id="registration-sections" hidden>
+    <div class="signup-card">
+      <div class="signup-eyebrow">The 3rd Edition is coming</div>
+      <h2 class="signup-title serif">Sign Up Now</h2>
+      <p class="signup-sub">
+        Grab a partner and claim your spot. <strong>Friday 12 June, midday</strong>, under open skies —
+        the venue will be announced soon.
+      </p>
+      <div class="poll-cta"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
+      <div class="signup-note">Teams, fixtures &amp; standings appear here once the poll closes.</div>
+    </div>
+  </div>
+
+  <!-- CHAMPIONS / REIGNING CHAMPIONS (data-driven from the Sheet's last Final) -->
   <div id="champions-banner" hidden></div>
 
-  <!-- LIVE / NEXT -->
-  <div class="card" id="live-card">
-    <div class="card-title"><span class="icon">⚡</span>Live &amp; Next Up</div>
-    <div id="live-content"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
-  </div>
+  <!-- LIVE MODE sections (hidden during registration) -->
+  <div id="live-sections" hidden>
+    <!-- LIVE / NEXT -->
+    <div class="card" id="live-card">
+      <div class="card-title"><span class="icon">⚡</span>Live &amp; Next Up</div>
+      <div id="live-content"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+    </div>
 
-  <!-- POOL LEADERS SNAPSHOT -->
-  <div class="section-divider">Pool Leaders</div>
-  <div class="snapshot-grid" id="leaders-grid">
-    <div class="snap-card"><div class="snap-label">Pool A Leader</div><div class="snap-value" id="leader-a">—</div><div class="snap-sub" id="leader-a-pts">—</div></div>
-    <div class="snap-card"><div class="snap-label">Pool B Leader</div><div class="snap-value" id="leader-b">—</div><div class="snap-sub" id="leader-b-pts">—</div></div>
-  </div>
+    <!-- POOL LEADERS SNAPSHOT -->
+    <div class="section-divider">Pool Leaders</div>
+    <div class="snapshot-grid" id="leaders-grid">
+      <div class="snap-card"><div class="snap-label">Pool A Leader</div><div class="snap-value" id="leader-a">—</div><div class="snap-sub" id="leader-a-pts">—</div></div>
+      <div class="snap-card"><div class="snap-label">Pool B Leader</div><div class="snap-value" id="leader-b">—</div><div class="snap-sub" id="leader-b-pts">—</div></div>
+    </div>
 
-  <!-- ON FIRE SNAPSHOT -->
-  <div class="card">
-    <div class="card-title"><span class="icon">🔥</span>On Fire — Hottest Right Now</div>
-    <div id="fire-snapshot"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+    <!-- ON FIRE SNAPSHOT -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🔥</span>On Fire — Hottest Right Now</div>
+      <div id="fire-snapshot"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+    </div>
   </div>
 
   <!-- THE STORY -->
@@ -122,7 +117,15 @@
 <script src="js/app.js"></script>
 <script>
 function render(c) {
-  // Champions banner — appears once the Final is decided
+  // Toggle registration vs live sections based on tournament phase
+  const regEl  = document.getElementById("registration-sections");
+  const liveEl_ = document.getElementById("live-sections");
+  if (regEl)  regEl.hidden  = !REGISTRATION_MODE;
+  if (liveEl_) liveEl_.hidden = REGISTRATION_MODE;
+  const signup = document.getElementById("signup-link");
+  if (signup) signup.href = whatsappUrl("Hi Sayor — I'd like to sign up for The Palace 3rd Edition (Fri 12 June). My team:");
+
+  // Champions banner — reigning champions during registration, live result otherwise
   const champEl = document.getElementById("champions-banner");
   const finalWinner = c.bracket?.F?.winner || null;
   const fireChamp = c.onfire.find(p => p.count > 0) || null;
@@ -131,9 +134,9 @@ function render(c) {
     champEl.innerHTML = `
       <div class="champions">
         <div class="champ-crown">👑</div>
-        <div class="champ-eyebrow">2nd Edition · Champions of The Palace</div>
+        <div class="champ-eyebrow">${REGISTRATION_MODE ? "Reigning Champions · 2nd Edition" : "2nd Edition · Champions of The Palace"}</div>
         <div class="champ-name serif">${teamLabel(finalWinner)}</div>
-        <div class="champ-tag">🏆 Winners of the Final</div>
+        <div class="champ-tag">🏆 ${REGISTRATION_MODE ? "Title to defend" : "Winners of the Final"}</div>
         ${fireChamp ? `
         <div class="champ-divider"></div>
         <div class="champ-fire">

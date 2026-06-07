@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
-  <title>On Fire — The Palace 2nd Edition</title>
+  <title>On Fire — The Palace 3rd Edition</title>
+  <link rel="icon" type="image/png" href="palace-logo.png">
+  <link rel="apple-touch-icon" href="palace-logo.png">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -52,32 +54,66 @@
     <span class="ts-arrow">↗</span>
   </a>
 
-  <!-- LEADER PANEL -->
-  <div id="leader-panel">
-    <div class="onfire-leader">
+  <!-- PLACE BETS -->
+  <a class="theme-song bets" id="bets-link" href="#" target="_blank" rel="noopener">
+    <span class="ts-icon">🎲</span>
+    <span class="ts-text">
+      <span class="ts-title">Place your bets</span>
+      <span class="ts-sub">Who goes On Fire first? Message the bookmaker</span>
+    </span>
+    <span class="ts-arrow">↗</span>
+  </a>
+
+  <!-- REGISTRATION: reigning champion + who's next -->
+  <div id="reg-onfire" hidden>
+    <div class="onfire-leader" style="margin-top:1rem">
       <div class="flame-icon">🔥</div>
-      <div class="leader-name">—</div>
-      <div class="leader-team">—</div>
-      <div class="leader-count">—</div>
-      <div class="leader-label">activations</div>
+      <div class="leader-name">Leonie</div>
+      <div class="leader-team">Reigning On Fire Champion · 2nd Edition</div>
+      <div class="leader-count">5</div>
+      <div class="leader-label">activations · The benchmark to beat</div>
+    </div>
+    <div class="card" style="border-color:var(--gold-dim);text-align:center">
+      <div class="card-title" style="justify-content:center"><span class="icon">🔥</span>Who's next?</div>
+      <p style="font-size:.9rem;line-height:1.7">
+        The 3rd Edition flame is <strong class="text-ember">up for grabs</strong>. Leonie set the bar at five —
+        who burns hottest under open skies on <strong>12 June</strong>?
+      </p>
+      <p style="font-size:.8rem;color:var(--text-muted);margin-top:.4rem">
+        Sign up, bring your A-game, and write your name into Palace history.
+      </p>
+      <div class="poll-cta" style="margin-top:1rem"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
     </div>
   </div>
 
-  <!-- FULL LEADERBOARD -->
-  <div class="card">
-    <div class="card-title"><span class="icon">🏅</span>All Players</div>
-    <div id="onfire-list"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+  <!-- LIVE: leader panel + leaderboard -->
+  <div id="live-onfire" hidden>
+    <div id="leader-panel">
+      <div class="onfire-leader">
+        <div class="flame-icon">🔥</div>
+        <div class="leader-name">—</div>
+        <div class="leader-team">—</div>
+        <div class="leader-count">—</div>
+        <div class="leader-label">activations</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="icon">🏅</span>All Players</div>
+      <div id="onfire-list"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+    </div>
   </div>
 
-  <!-- 1ST EDITION NOTE -->
+  <!-- PAST ON FIRE CHAMPIONS -->
   <div class="card" style="border-color:var(--gold-dim)">
-    <div class="card-title"><span class="icon">👑</span>1st Edition On Fire Champion</div>
-    <p style="font-size:.9rem">
-      <strong class="text-gold">Paolo</strong>
-      <span class="text-muted"> — the original flame-keeper. The benchmark has been set.</span>
+    <div class="card-title"><span class="icon">👑</span>On Fire — Past Champions</div>
+    <p style="font-size:.88rem;margin-bottom:.3rem">
+      🥇 <strong class="text-ember">Leonie</strong>
+      <span class="text-muted"> — 2nd Edition. Five activations; reigning champion.</span>
     </p>
-    <p style="font-size:.8rem;color:var(--text-muted);margin-top:.4rem">
-      Paolo returns this edition alongside Malik. Can he defend his crown?
+    <p style="font-size:.88rem">
+      🥈 <strong class="text-gold">Paolo</strong>
+      <span class="text-muted"> — 1st Edition. The original flame-keeper who set the standard.</span>
     </p>
   </div>
 
@@ -89,6 +125,17 @@
 <script src="js/app.js"></script>
 <script>
 function render(c) {
+  // Wire WhatsApp links
+  const bets = document.getElementById("bets-link");
+  if (bets) bets.href = whatsappUrl("Hi Sayor — I'd like to place a bet on The Palace 3rd Edition On Fire. My pick:");
+  const signup = document.getElementById("signup-link");
+  if (signup) signup.href = whatsappUrl("Hi Sayor — I'd like to sign up for The Palace 3rd Edition (Fri 12 June). My team:");
+
+  // Toggle registration vs live On Fire
+  document.getElementById("reg-onfire").hidden = !REGISTRATION_MODE;
+  document.getElementById("live-onfire").hidden = REGISTRATION_MODE;
+  if (REGISTRATION_MODE) return;
+
   const players = c.onfire;
   const maxCount = players[0]?.count || 0;
 
