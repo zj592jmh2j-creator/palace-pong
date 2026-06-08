@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0C0A0E">
+  <meta name="description" content="The Palace — 3rd Edition beer pong tournament recap: champions, biggest blowout, On Fire champion and total cups sunk.">
+  <meta property="og:title" content="The Palace — 3rd Edition Recap">
+  <meta property="og:description" content="Champions, biggest blowout, On Fire champion and total cups sunk.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Palace — 3rd Edition Recap">
+  <meta name="twitter:description" content="Champions, biggest blowout, On Fire champion and total cups sunk.">
+  <meta name="twitter:image" content="og-image.png">
+  <title>Recap — The Palace 3rd Edition</title>
+  <link rel="icon" type="image/png" href="palace-logo.png">
+  <link rel="apple-touch-icon" href="palace-logo.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<div id="loading-bar"></div>
+<div id="error-banner" hidden></div>
+
+<nav class="bottom-nav" id="main-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
+  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
+  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
+  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
+  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
+</nav>
+<div class="more-overlay" id="more-overlay" hidden></div>
+<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
+  <div class="more-sheet-title">More</div>
+  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
+  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
+</div>
+
+<div class="status-bar">
+  <button id="refresh-btn" title="Refresh now">↻</button>
+  <span id="last-updated">Loading…</span>
+</div>
+
+<div class="page-header">
+  <h1>Tournament Recap</h1>
+  <div class="subtitle">The 3rd Edition, by the numbers</div>
+</div>
+
+<main>
+  <div id="recap-locked" hidden>
+    <div class="stay-tuned">
+      <span class="st-icon">📊</span>
+      <div class="st-title serif">Recap unlocks at the final whistle</div>
+      <div class="st-sub">Once the 3rd Edition wraps, the numbers land here — biggest blowout, hottest player, total cups sunk.</div>
+    </div>
+  </div>
+
+  <div id="recap-content" hidden>
+    <div class="recap-champ" id="recap-champ"></div>
+    <div class="recap-grid" id="recap-stats"></div>
+    <a href="halloffame.html" style="display:inline-block;margin-top:1rem;font-size:.85rem;color:var(--gold);text-decoration:none">View Hall of Fame →</a>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/app.js"></script>
+<script>
+function statCard(s) {
+  return `<div class="recap-stat">
+    <div class="recap-val">${s.value}</div>
+    <div class="recap-label">${s.label}</div>
+    ${s.sub ? `<div class="recap-sub">${s.sub}</div>` : ""}
+  </div>`;
+}
+
+function render(c) {
+  const locked = document.getElementById("recap-locked");
+  const content = document.getElementById("recap-content");
+  if (!c.complete) { locked.hidden = false; content.hidden = true; return; }
+  locked.hidden = true; content.hidden = false;
+
+  document.getElementById("recap-champ").innerHTML = c.results.winner
+    ? `<div class="recap-champ-crown">👑</div><div class="recap-champ-name serif">${c.results.winner}</div><div class="recap-champ-tag">Champions of the 3rd Edition</div>`
+    : "";
+
+  const r = c.recap;
+  const cards = [
+    { value: r.mostCups ? r.mostCups.cups : "—", label: "Most cups in a match",
+      sub: r.mostCups ? `${teamLabel(r.mostCups.team)} vs ${teamLabel(r.mostCups.opp)}` : "" },
+    { value: r.biggestBlowout ? `+${r.biggestBlowout.diff}` : "—", label: "Biggest blowout",
+      sub: r.biggestBlowout ? `${teamLabel(r.biggestBlowout.winner)} · ${r.biggestBlowout.score}` : "" },
+    { value: r.fireChamp ? r.fireChamp.player : "—", label: "On Fire champion",
+      sub: r.fireChamp ? `${r.fireChamp.count} activation${r.fireChamp.count !== 1 ? "s" : ""}` : "" },
+    { value: r.totalCups, label: "Total cups sunk", sub: "across the tournament" },
+    { value: r.totalActivations, label: "Total On Fires", sub: "declared all day" }
+  ];
+  document.getElementById("recap-stats").innerHTML = cards.map(statCard).join("");
+}
+
+initPage(render);
+</script>
+</body>
+</html>

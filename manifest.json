@@ -1,0 +1,15 @@
+{
+  "name": "The Palace",
+  "short_name": "Palace",
+  "description": "The Palace — 3rd Edition beer pong tournament. Live scoreboard, On Fire leaderboard & Palace Odds.",
+  "start_url": "index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#0C0A0E",
+  "background_color": "#0C0A0E",
+  "icons": [
+    { "src": "palace-logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "palace-logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}

@@ -4,22 +4,47 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
+  <meta name="description" content="The Palace — 3rd Edition beer pong tournament. Friday 12 June 2026, midday, outdoors. Live scoreboard, standings, On Fire leaderboard and Palace Odds.">
+  <!-- Social unfurl. TODO: for the most reliable WhatsApp/Twitter preview, change the two URLs below to your absolute GitHub Pages address, e.g. https://YOURNAME.github.io/palace-pong/ -->
+  <meta property="og:title" content="The Palace — 3rd Edition">
+  <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Palace — 3rd Edition">
+  <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
+  <meta name="twitter:image" content="og-image.png">
   <title>Teams — The Palace 3rd Edition</title>
   <link rel="icon" type="image/png" href="palace-logo.png">
   <link rel="apple-touch-icon" href="palace-logo.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" id="main-nav">
   <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
   <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
   <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
   <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
+  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
+  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
+</nav>
+<div class="more-overlay" id="more-overlay" hidden></div>
+<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
+  <div class="more-sheet-title">More</div>
   <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
   <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
   <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
-</nav>
+  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
+</div>
 
 <div class="page-header">
   <h1>Teams</h1>
@@ -33,10 +58,10 @@
     <div class="stay-tuned" style="margin-bottom:1rem">
       <span class="st-icon">👥</span>
       <div class="st-title serif">Rosters to be determined</div>
-      <div class="st-sub">Grab a partner and claim one of the slots below. Confirmed teams appear here as they sign up.</div>
-      <div class="poll-cta"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
+      <div class="st-sub">Sign up as a <strong>solo competitor</strong> — teams are drawn at random once the field is full.</div>
+      <a class="poll-cta" href="#" target="_blank" rel="noopener"><span class="poll-icon">💬</span>Vote in Party Chat Poll</a>
     </div>
-    <div class="section-divider">Open Slots</div>
+    <div class="section-divider" id="tbd-label">The Field</div>
     <div class="team-grid" id="tbd-teams"></div>
   </div>
 
@@ -51,6 +76,8 @@
 </main>
 
 <script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
 <script src="js/app.js"></script>
 <script>
 function renderPool(pool, containerId) {
@@ -64,19 +91,27 @@ function renderPool(pool, containerId) {
     </div>`).join("");
 }
 
-function renderTbd(containerId, count) {
+// Registration: list confirmed individual competitors, then fill the remaining
+// slots up to spotsTotal with open placeholders.
+function renderRegistrationTeams(containerId, signups, spotsTotal) {
   let html = "";
-  for (let i = 1; i <= count; i++) {
+  signups.forEach((s, i) => {
     html += `
       <div class="team-card">
-        <div class="pool-tag">Team ${i}</div>
-        <div class="players">
-          <div class="player-row" style="color:var(--text-dim)">👤 TBD</div>
-          <div class="player-row" style="color:var(--text-dim)">👤 TBD</div>
-        </div>
+        <div class="pool-tag">#${i + 1} · Confirmed ✓</div>
+        <div class="players">👤 ${s.player}</div>
+      </div>`;
+  });
+  for (let i = signups.length; i < spotsTotal; i++) {
+    html += `
+      <div class="team-card">
+        <div class="pool-tag">#${i + 1}</div>
+        <div class="players" style="color:var(--text-dim)">👤 Open spot</div>
       </div>`;
   }
   document.getElementById(containerId).innerHTML = html;
+  const label = document.getElementById("tbd-label");
+  if (label) label.textContent = `The Field · ${signups.length} of ${spotsTotal} in`;
 }
 
 function playerIcon(player) {
@@ -85,17 +120,19 @@ function playerIcon(player) {
   return "👤";
 }
 
-document.getElementById("reg-teams").hidden = !REGISTRATION_MODE;
-document.getElementById("live-teams").hidden = REGISTRATION_MODE;
-const signup = document.getElementById("signup-link");
-if (signup) signup.href = whatsappUrl("Hi Sayor — I'd like to sign up for The Palace 3rd Edition (Fri 12 June). My team:");
-
-if (REGISTRATION_MODE) {
-  renderTbd("tbd-teams", 10);
-} else {
-  renderPool("A", "pool-a-teams");
-  renderPool("B", "pool-b-teams");
+function render(c) {
+  document.getElementById("reg-teams").hidden = !c.registration;
+  document.getElementById("live-teams").hidden = c.registration;
+  wirePollCtas();
+  if (c.registration) {
+    renderRegistrationTeams("tbd-teams", c.signups, c.tournament.spotsTotal);
+  } else {
+    renderPool("A", "pool-a-teams");
+    renderPool("B", "pool-b-teams");
+  }
 }
+
+initPage(render);
 </script>
 </body>
 </html>

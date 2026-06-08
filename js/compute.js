@@ -17,6 +17,22 @@ function cupResult(ch, ca) {
 
 // ── Pool Standings ────────────────────────────────────────────────────────────
 
+// Head-to-head winner between two teams in a pool (round-robin → at most one
+// meeting). Returns the winning team id, or null if drawn / not yet played.
+function headToHead(poolMatches, idA, idB) {
+  for (const m of poolMatches) {
+    if (m.status !== "final") continue;
+    const matched = (m.home === idA && m.away === idB) || (m.home === idB && m.away === idA);
+    if (!matched) continue;
+    const ch = parseInt(m.cupsHome, 10), ca = parseInt(m.cupsAway, 10);
+    const res = cupResult(ch, ca);
+    if (res === "home") return m.home;
+    if (res === "away") return m.away;
+    return null; // drawn
+  }
+  return null;
+}
+
 function computePoolStandings(poolMatches, pool) {
   const ids = poolTeams(pool).map(t => t.id);
   const stats = {};
@@ -48,13 +64,16 @@ function computePoolStandings(poolMatches, pool) {
     diff: s.cupsFor - s.cupsAgainst
   }));
 
-  // Sort: points → diff → cupsFor → alphabetical (deterministic)
-  rows.sort((a, b) =>
-    b.points   - a.points   ||
-    b.diff     - a.diff     ||
-    b.cupsFor  - a.cupsFor  ||
-    a.id.localeCompare(b.id)
-  );
+  // Sort: points → head-to-head → cup diff → cupsFor → alphabetical.
+  // Head-to-head only applies between teams level on points: if they met and one
+  // beat the other, that team ranks higher (before falling back to differential).
+  rows.sort((a, b) => {
+    if (b.points !== a.points) return b.points - a.points;
+    const h2h = headToHead(poolMatches, a.id, b.id);
+    if (h2h === a.id) return -1;
+    if (h2h === b.id) return 1;
+    return (b.diff - a.diff) || (b.cupsFor - a.cupsFor) || a.id.localeCompare(b.id);
+  });
 
   rows.forEach((r, i) => { r.rank = i + 1; });
   return rows;
@@ -264,6 +283,150 @@ function computeOrderOfPlay(poolMatches, bracket) {
   });
 }
 
+// ── Event config (static TOURNAMENT defaults + live Meta overrides) ────────────
+// Meta values win when present; everything works off config.js when Meta is empty.
+function resolveTournament(meta) {
+  meta = meta || {};
+  const g = k => meta[k.toLowerCase()];   // meta keys are stored lowercased
+  const t = { ...TOURNAMENT };
+  const phase = (g("phase") || t.phase || "registration").toLowerCase();
+  t.phase = ["registration", "live", "complete"].includes(phase) ? phase : t.phase;
+  if (g("venue"))         t.venue     = g("venue");
+  if (g("dateText"))      t.date      = g("dateText");
+  if (g("startTimeText")) t.startTime = g("startTimeText");
+  t.countdownTargetISO = g("countdownTargetISO") || COUNTDOWN_DEFAULT_ISO;
+  const spots = parseInt(g("spotsTotal"), 10);
+  t.spotsTotal = spots > 0 ? spots : (t.spotsTotal || 20);
+  let poll = g("pollUrl") || POLL_URL || "";
+  if (poll && !/^https?:\/\//i.test(poll) && poll !== "#") poll = "https://" + poll; // tolerate "wa.me/…"
+  t.pollUrl    = poll;
+  t.oddsNote   = g("oddsNote") || "";
+  t.betsLockISO = g("betsLockISO") || BETS_LOCK_ISO;
+  t.bettingOpen = (g("bettingOpen") || "").toLowerCase(); // "yes" | "no" | ""
+  return t;
+}
+
+// ── Palace Odds (pari-mutuel pool) ─────────────────────────────────────────────
+// Pure functions. Pool split: each winning $1 returns (Net / pool_on_winner).
+
+function normalizeMarketKey(s) {
+  const k = (s || "").toLowerCase().replace(/[^a-z]/g, "");
+  if (k.includes("onfire") || k.includes("fire")) return "onfire";
+  if (k.includes("winner") || k.includes("tournament") || k.includes("champion")) return "winner";
+  return k;
+}
+
+// Match a free-typed selection to a known selection (case/spacing/punct-insensitive).
+function matchSelection(raw, selections) {
+  if (!raw) return null;
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const n = norm(raw);
+  return selections.find(s => norm(s) === n) || null;
+}
+
+// Compute one market's pool odds from the raw Bets rows.
+function computeMarketOdds(bets, marketKey, selections, takeout) {
+  takeout = takeout || 0;
+  const pool = {}; selections.forEach(s => { pool[s] = 0; });
+  const matched = [];
+  let total = 0, betCount = 0;
+
+  for (const b of bets) {
+    if (normalizeMarketKey(b.market) !== marketKey) continue;
+    const stake = parseFloat(b.stake);
+    if (isNaN(stake) || stake <= 0) continue;
+    const sel = matchSelection(b.selection, selections);
+    if (!sel) continue;                       // unknown selection → ignored
+    pool[sel] += stake; total += stake; betCount++;
+    matched.push({ bettor: (b.bettor || "").trim(), selection: sel, stake });
+  }
+
+  const net = total * (1 - takeout);
+  const rows = selections.map(sel => {
+    const p = pool[sel];
+    return {
+      selection: sel,
+      pool: p,
+      backers: matched.filter(m => m.selection === sel).length,
+      decimal: p > 0 ? net / p : null,                 // multiplier (stake included)
+      impliedPct: total > 0 ? p / total : 0,
+      projectedReturnPerUnit: p > 0 ? net / p : null
+    };
+  });
+  // Backed selections first (largest pool = shortest odds), unbacked last.
+  rows.sort((a, b) => (b.pool - a.pool) || a.selection.localeCompare(b.selection));
+
+  const backed = rows.filter(r => r.pool > 0);
+  return {
+    key: marketKey, totalPool: total, betCount, net, rows, matched,
+    onlyBacker: backed.length === 1,
+    favourite: backed.length ? backed[0].selection : null
+  };
+}
+
+// Settle a market once the winning selection(s) are known. Winners may be MORE
+// than one selection (e.g. both members of the champion team for the Winner
+// market) — the pot is split across the combined winning pool so it stays
+// balanced. Returns null until winners are known.
+function settleMarket(m, winnerNames) {
+  if (!winnerNames || !winnerNames.length) return null;
+  const winners = winnerNames.filter(Boolean);
+  const combinedPool = winners.reduce((s, n) => {
+    const row = m.rows.find(r => r.selection === n);
+    return s + (row ? row.pool : 0);
+  }, 0);
+  const payout = combinedPool > 0 ? m.net / combinedPool : null;
+  const winningBets = m.matched
+    .filter(b => winners.includes(b.selection))
+    .map(b => ({ bettor: b.bettor, selection: b.selection, stake: b.stake,
+                 return: payout ? b.stake * payout : b.stake }));
+  return { winners, combinedPool, payout, refunded: combinedPool === 0, winningBets };
+}
+
+// Is betting open? Open before the lock time unless manually closed; a manual
+// "yes" can force it open. Selection existence (teams confirmed) is gated by phase
+// in the page layer.
+function bettingState(tournament) {
+  const lockMs = parseEventDate(tournament.betsLockISO).getTime();
+  const now = Date.now();
+  const manual = tournament.bettingOpen; // "yes" | "no" | ""
+  const beforeLock = isNaN(lockMs) ? true : now < lockMs;
+  const open = manual === "no" ? false : (manual === "yes" ? true : beforeLock);
+  return { open, lockISO: tournament.betsLockISO, lockMs, beforeLock };
+}
+
+// ── Recap stats (post-event) ───────────────────────────────────────────────────
+// Pure helpers over the existing data. Do not mutate anything.
+function computeRecap(poolMatches, knockout, onfireRows) {
+  const all = [...(poolMatches || []), ...(knockout || [])];
+  let mostCups = null;          // most cups by one team in a single match
+  let biggestBlowout = null;    // largest cup differential
+  let totalCups = 0;
+
+  for (const m of all) {
+    if (m.status !== "final") continue;
+    const ch = parseInt(m.cupsHome, 10), ca = parseInt(m.cupsAway, 10);
+    if (isNaN(ch) || isNaN(ca)) continue;
+    totalCups += ch + ca;
+    const hi = Math.max(ch, ca);
+    if (!mostCups || hi > mostCups.cups) {
+      const homeHi = ch >= ca;
+      mostCups = { cups: hi, team: homeHi ? m.home : m.away, opp: homeHi ? m.away : m.home, id: m.id };
+    }
+    const diff = Math.abs(ch - ca);
+    if (!biggestBlowout || diff > biggestBlowout.diff) {
+      const winnerHome = ch > ca;
+      biggestBlowout = { diff, winner: winnerHome ? m.home : m.away, loser: winnerHome ? m.away : m.home, score: `${hi}–${Math.min(ch, ca)}`, id: m.id };
+    }
+  }
+
+  const onfire = computeOnFire(onfireRows || []);
+  const fireChamp = onfire.find(p => p.count > 0) || null;
+  const totalActivations = onfire.reduce((s, p) => s + p.count, 0);
+
+  return { mostCups, biggestBlowout, totalCups, fireChamp, totalActivations };
+}
+
 // ── Master compute ────────────────────────────────────────────────────────────
 
 // Empty-but-valid computed shape — used before first successful load or when
@@ -290,6 +453,53 @@ function computeAll(data) {
   const live        = orderOfPlay.filter(m => m.status === "live");
   const next        = orderOfPlay.filter(m => m.status === "upcoming").slice(0, 3);
 
+  // Resolved event config + phase (Meta over TOURNAMENT defaults).
+  const tournament   = resolveTournament(data.meta);
+  const registration = tournament.phase === "registration";
+  const complete     = tournament.phase === "complete";
+
+  // Signups: individual competitors (people sign up as players; teams drawn later).
+  const signups = (data.signups || [])
+    .map(r => ({ player: (r.player || r.player1 || "").trim() }))
+    .filter(s => s.player);
+
+  // ── Palace Odds ──
+  const bets = (data.bets || []).map(b => ({
+    timestamp: (b.timestamp || "").trim(),
+    bettor: (b.bettor || "").trim(),
+    market: b.market, selection: b.selection, stake: b.stake
+  }));
+  // Betting selections = the individual competitors who signed up (Signups tab).
+  // Fall back to the roster only if no one has signed up yet.
+  const competitors = signups.length
+    ? [...new Set(signups.map(s => s.player))]
+    : marketSelections("winner");
+  const odds = {};
+  for (const m of MARKETS) {
+    odds[m.key] = computeMarketOdds(bets, m.key, competitors, TAKEOUT);
+  }
+  const betting = bettingState(tournament);
+
+  // Winning selections per market (competitor-level):
+  //  • Winner  → BOTH players of the champion team (bet wins if your competitor's team wins).
+  //  • On Fire → the single top player.
+  const champTeam = bracket.F && bracket.F.winner ? teamById(bracket.F.winner) : null;
+  const winnerWinners = champTeam ? champTeam.players.slice() : [];
+  const onfireWinner = (onfire[0] && onfire[0].count > 0) ? [onfire[0].player] : [];
+  odds.winner.settlement = settleMarket(odds.winner, winnerWinners);
+  odds.onfire.settlement = settleMarket(odds.onfire, onfireWinner);
+
+  const results = {
+    winner: bracket.F && bracket.F.winner ? teamLabel(bracket.F.winner) : null, // team label (recap/banner)
+    winnerPlayers: winnerWinners,                                               // champion competitors
+    onfire: onfireWinner[0] || null
+  };
+
+  const recap = computeRecap(data.poolMatches, data.knockout, data.onfire);
+
   return { standings, bracket, onfire, poolA, poolB, orderOfPlay, live, next,
-           poolAFinal, poolBFinal, fetchedAt: data.fetchedAt };
+           poolAFinal, poolBFinal,
+           tournament, phase: tournament.phase, registration, complete,
+           signups, bets, odds, betting, results, recap,
+           fetchedAt: data.fetchedAt };
 }

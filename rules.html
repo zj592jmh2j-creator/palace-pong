@@ -4,22 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
+  <meta name="description" content="The Palace — 3rd Edition beer pong tournament. Friday 12 June 2026, midday, outdoors. Live scoreboard, standings, On Fire leaderboard and Palace Odds.">
+  <!-- Social unfurl. TODO: for the most reliable WhatsApp/Twitter preview, change the two URLs below to your absolute GitHub Pages address, e.g. https://YOURNAME.github.io/palace-pong/ -->
+  <meta property="og:title" content="The Palace — 3rd Edition">
+  <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Palace — 3rd Edition">
+  <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
+  <meta name="twitter:image" content="og-image.png">
   <title>Rules — The Palace 3rd Edition</title>
   <link rel="icon" type="image/png" href="palace-logo.png">
   <link rel="apple-touch-icon" href="palace-logo.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" id="main-nav">
   <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
   <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
   <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
   <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
+  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
+  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
+</nav>
+<div class="more-overlay" id="more-overlay" hidden></div>
+<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
+  <div class="more-sheet-title">More</div>
   <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
   <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
   <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
-</nav>
+  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
+</div>
 
 <div class="page-header">
   <h1>Rules</h1>
@@ -33,6 +57,24 @@
     Carried over from the 2nd Edition: 6 cups · 3-2-1 "Christmas Tree" formation · 1 re-rack per team per match · time limits · On Fire as the centrepiece.
   </div>
 
+  <!-- TL;DR -->
+  <div class="tldr-card">
+    <div class="tldr-title">The 60-second version</div>
+    <ul class="tldr-list">
+      <li><strong>6 cups</strong> each, in a <strong>3-2-1</strong> "Christmas Tree".</li>
+      <li>Cups hold <strong>water only</strong> — beer's in your own glass.</li>
+      <li>Clear all the other team's cups to win.</li>
+      <li>Knockout tie at time → <strong>Shootout</strong>.</li>
+    </ul>
+    <div class="tldr-fire">
+      <span class="tldr-fire-icon">🔥</span>
+      <div>
+        <div class="tldr-fire-head">On Fire — the main event</div>
+        <div class="tldr-fire-sub">Score on <strong>2 turns in a row</strong> → you're On Fire (declare it, it counts). A <strong>3rd in a row</strong> → keep shooting till you miss. Most activations wins the On Fire crown.</div>
+      </div>
+    </div>
+  </div>
+
   <!-- 1. Objective -->
   <div class="rules-section">
     <h2>1. Objective</h2>
@@ -43,6 +85,12 @@
   <div class="rules-section">
     <h2>2. Setup</h2>
     <p><strong>6 plastic cups</strong> per team, arranged in a <strong>3-2-1 "Christmas Tree"</strong> formation — 3 at the back, 2 in the middle, 1 at the front.</p>
+    <div class="rack" aria-label="3-2-1 Christmas Tree cup formation: three cups at the back, two in the middle, one at the front">
+      <div class="rack-row"><span class="cup"></span><span class="cup"></span><span class="cup"></span></div>
+      <div class="rack-row"><span class="cup"></span><span class="cup"></span></div>
+      <div class="rack-row"><span class="cup"></span></div>
+      <div class="rack-caption">▲ toward the shooter</div>
+    </div>
     <p>Cups hold <strong>water only</strong> (hygiene, less waste, fewer splashes). Beer from separate personal cups.</p>
   </div>
 
@@ -72,6 +120,12 @@
             alive — and it must be taken by the <strong>player next in the shooting order</strong>. Miss the redemption and the match is lost.</li>
       </ul>
     </div>
+  </div>
+
+  <!-- Pool standings tiebreak order: points, then head-to-head (between teams
+       level on points), then cup differential, then cups-for, then alphabetical. -->
+  <div class="rules-note">
+    <strong>Pool standings tiebreaks (in order):</strong> Points → <strong>head-to-head</strong> (if two level teams played, the winner ranks higher) → cup differential → cups for.
   </div>
 
   <!-- 4. Line violations -->
@@ -147,9 +201,14 @@
 
 </main>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
 <script src="js/app.js"></script>
 <script>
-// Mark active nav only (no data needed for rules page)
+// Static content — fetch only so the global NOW/NEXT bar can appear when live.
+initPage(function(){});
 </script>
 </body>
 </html>

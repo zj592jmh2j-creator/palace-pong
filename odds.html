@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0C0A0E">
+  <meta name="description" content="The Palace — 3rd Edition beer pong tournament. Friday 12 June 2026, midday, outdoors. Live scoreboard, standings, On Fire leaderboard and Palace Odds.">
+  <!-- Social unfurl. TODO: for the most reliable WhatsApp/Twitter preview, change the two URLs below to your absolute GitHub Pages address, e.g. https://YOURNAME.github.io/palace-pong/ -->
+  <meta property="og:title" content="The Palace — 3rd Edition">
+  <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Palace — 3rd Edition">
+  <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
+  <meta name="twitter:image" content="og-image.png">
+  <title>Palace Odds — The Palace 3rd Edition</title>
+  <link rel="icon" type="image/png" href="palace-logo.png">
+  <link rel="apple-touch-icon" href="palace-logo.png">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+
+<div id="loading-bar"></div>
+<div id="error-banner" hidden></div>
+
+<nav class="bottom-nav" id="main-nav">
+  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
+  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
+  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
+  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
+  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
+  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
+</nav>
+<div class="more-overlay" id="more-overlay" hidden></div>
+<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
+  <div class="more-sheet-title">More</div>
+  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
+  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
+</div>
+
+<div class="status-bar">
+  <button id="refresh-btn" title="Refresh now">↻</button>
+  <span id="last-updated">Loading…</span>
+</div>
+
+<div class="page-header">
+  <h1>🎲 Palace Odds</h1>
+  <div class="subtitle" id="odds-state">The House: Sayor · pari-mutuel pools</div>
+</div>
+
+<main>
+  <div id="odds-markets"><p class="text-muted" style="font-size:.85rem">Loading…</p></div>
+
+  <div class="odds-disclaimer" id="odds-disclaimer"></div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/data.js"></script>
+<script src="js/compute.js"></script>
+<script src="js/app.js"></script>
+<script>
+const UNIT = 5; // encourage uniform $5 stakes
+
+function money(n) { return "$" + (Math.round(n * 100) / 100).toLocaleString(); }
+
+function backHref(selection, marketLabel) {
+  return whatsappUrl(`Hi my Bookie Babe, I'd like to back ${selection} for ${marketLabel}. Stake: ____ (units of $${UNIT})`);
+}
+
+function selectionRow(r, market, isFav, open) {
+  if (r.pool <= 0) {
+    return `<div class="odds-row noback">
+      <div class="odds-sel">${r.selection}</div>
+      <div class="odds-noback">no backers yet</div>
+      ${open ? `<a class="odds-back" href="${backHref(r.selection, market.label)}" target="_blank" rel="noopener">Back this</a>` : ""}
+    </div>`;
+  }
+  const dec = r.decimal;
+  const ret = Math.round(UNIT * dec);
+  const tag = isFav ? `<span class="odds-fav">★ Pool favourite</span>`
+            : (r.backers === 1 ? `<span class="odds-only">only backer</span>` : "");
+  return `<div class="odds-row">
+    <div class="odds-sel">${r.selection} ${tag}</div>
+    <div class="odds-meta">
+      <span class="odds-dec">${dec.toFixed(1)}x</span>
+      <span class="odds-imp">${Math.round(r.impliedPct * 100)}%</span>
+      <span class="odds-hint">$${UNIT} returns ~$${ret}</span>
+    </div>
+    ${open ? `<a class="odds-back" href="${backHref(r.selection, market.label)}" target="_blank" rel="noopener">Back this</a>` : ""}
+  </div>`;
+}
+
+function settlementPanel(m) {
+  const s = m.settlement;
+  if (!s) return "";
+  const title = s.winners.join(" & ");
+  if (s.refunded) {
+    return `<div class="odds-results">
+      <div class="odds-results-title">Result: ${title}</div>
+      <p>No backers on the winner — <strong>all stakes in this market are refunded.</strong></p>
+    </div>`;
+  }
+  const list = s.winningBets
+    .map(b => `<li>${b.bettor || "Anon"} — ${money(b.stake)} on ${b.selection} → returns <strong>${money(b.return)}</strong></li>`).join("");
+  return `<div class="odds-results">
+    <div class="odds-results-title">🏆 Result: ${title}</div>
+    <p>Final pool ${money(m.totalPool)} · winners split at <strong>${s.payout.toFixed(2)}x</strong></p>
+    <ul class="odds-winners">${list || "<li>No bets on the winner.</li>"}</ul>
+  </div>`;
+}
+
+function marketCard(c, market) {
+  const m = c.odds[market.key];
+  // A market only "settles" once betting has closed — while betting is open we
+  // always show live odds (guards against leftover bracket data settling early).
+  const settled = !!m.settlement && !c.betting.open;
+  const open = c.betting.open;   // betting is open from registration until lock
+
+  const stateLine = settled
+    ? `<div class="odds-locked">SETTLED — final pool</div>`
+    : (open
+        ? `<div class="odds-open">Odds float with the pool. Locks at the start of the tournament (12:00, midday).</div>`
+        : `<div class="odds-locked">BETTING CLOSED — odds final</div>`);
+  const pool = `<div class="odds-pool">Pool: <strong>${money(m.totalPool)}</strong> across ${m.betCount} bet${m.betCount !== 1 ? "s" : ""}.</div>`;
+  const firstNote = (m.totalPool === 0 && open)
+    ? `<p class="odds-closed-note">No bets yet — back a competitor to set the first line.</p>` : "";
+  // Always list selections so a bet can be placed (unbacked show "no backers yet").
+  const rows = firstNote + m.rows.map(r => selectionRow(r, market, r.selection === m.favourite, open)).join("");
+
+  return `<div class="card odds-card">
+    <div class="card-title"><span class="icon">${market.key === "onfire" ? "🔥" : "🏆"}</span>${market.label}</div>
+    ${pool}${stateLine}${settled ? settlementPanel(m) : ""}
+    <div class="odds-rows">${rows}</div>
+  </div>`;
+}
+
+function render(c) {
+  const st = document.getElementById("odds-state");
+  st.textContent = c.betting.open ? "Betting OPEN · locks at midday" : "Betting closed · odds final";
+
+  document.getElementById("odds-markets").innerHTML = MARKETS.map(mk => marketCard(c, mk)).join("");
+
+  const note = c.tournament.oddsNote ? ` ${c.tournament.oddsNote}` : "";
+  document.getElementById("odds-disclaimer").innerHTML =
+    `<strong>The House is Sayor.</strong> The Palace is a friends' game. You back <strong>individual competitors</strong> — teams are drawn later, so if your competitor's team wins, you cash. This is a pari-mutuel pool: the pot is split in proportion to stake among backers of the winning side (and since two players share each title, backers of <em>either</em> champion split the Winner pool). Odds float until betting locks; your payout is set by the final pool. The House settles in person. If nobody backed the winner, all stakes are refunded. Keep stakes to $${UNIT} units so the pool stays sane.${note}`;
+}
+
+initPage(render);
+</script>
+</body>
+</html>

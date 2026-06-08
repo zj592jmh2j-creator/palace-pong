@@ -93,6 +93,34 @@ Seed all 20 players with `count = 0`. Increment a player's count by 1 each time 
 | Martin    | 0     |   | Paolo    | 0     |
 | Bianca    | 0     |   | Malik    | 0     |
 
+### Optional tabs (3rd-Edition features — all degrade gracefully if absent)
+
+These are **optional**: if a tab is missing or empty the site still works off the code defaults. Add them when you want the feature.
+
+**Tab `Meta`** — headers: `key | value`. Lets you change the event from the Sheet (no code edits). Recognised keys:
+
+| key | example value | effect |
+|-----|---------------|--------|
+| `phase` | `registration` / `live` / `complete` | site mode: signup → scoreboard → recap/champion card |
+| `venue` | `The Rooftop, 5th Ave` | hero venue (while it contains "announce", the "notify me" link shows) |
+| `dateText` | `Friday 12 June 2026` | hero date |
+| `startTimeText` | `Midday (12:00)` | hero time |
+| `countdownTargetISO` | `2026-06-12T12:00:00` | countdown target |
+| `spotsTotal` | `20` | "X of N Competitors in" capacity |
+| `pollUrl` | `https://…` | if set, the signup CTA points to your poll |
+| `betsLockISO` | `2026-06-12T12:00:00` | when Palace Odds betting locks |
+| `bettingOpen` | `yes` / `no` | manual betting kill-switch / force-open |
+| `oddsNote` | free text | appended to the Odds disclaimer |
+
+**Tab `Signups`** — headers: `player`. One row per competitor. Drives "X of 20 Competitors in" and the confirmed-competitor preview.
+
+**Tab `Bets`** — headers: `timestamp | bettor | market | selection | stake`. The House (you) types each WhatsApp bet here; the site computes all Palace Odds live.
+- `market`: `Winner` or `On Fire`
+- `selection`: an **individual competitor's name** (e.g. `Luca`) for *both* markets — people bet on people, not teams
+- `stake`: a number (encourage $5 units)
+
+> Odds are **pari-mutuel** and bet on individual competitors. For **Winner**, a bet wins if that competitor's (randomised) team wins the Final — so both members of the champion team are winners, and the pot splits across backers of **either**. Add a bet row → odds & projected payouts recompute within one refresh. Betting auto-locks at `betsLockISO` (default midday).
+
 ---
 
 ## 2. Share the Sheet
@@ -188,13 +216,20 @@ palace-pong/
 ├── rules.html          Full 2nd-edition rules
 ├── teams.html          All 10 teams / 20 players
 ├── halloffame.html     Past champions + The Founding Father
+├── odds.html           Palace Odds — pari-mutuel betting pools
+├── recap.html          Post-event stats (shown when phase=complete)
+├── manifest.json       PWA manifest ("Add to Home Screen")
+├── og-image.png        1200×630 social-share image
+├── palace-logo.png     Crest / favicon / PWA icon
 ├── css/style.css       All styles (dark luxury theme)
 └── js/
-    ├── config.js       SHEET_ID + static TOURNAMENT/TEAMS config
-    ├── data.js         gviz CSV fetch + PapaParse wrapper
-    ├── compute.js      Standings, bracket, On Fire computation
-    └── app.js          Refresh cycle, shared render helpers
+    ├── config.js       SHEET_ID, WHATSAPP_NUMBER, MARKETS, TOURNAMENT, TEAMS
+    ├── data.js         gviz CSV fetch (allSettled, optional tabs) + PapaParse
+    ├── compute.js      Standings, bracket, On Fire, Meta merge, odds, recap
+    └── app.js          Refresh cycle, nav/More, countdown, NOW/NEXT bar, CTAs
 ```
+
+> **Social preview:** the `og:url` / `og:image` tags use a `YOURNAME.github.io` placeholder. For the richest WhatsApp/Twitter unfurl, find-and-replace that with your real GitHub Pages URL across the `.html` files (search `YOURNAME`).
 
 ---
 

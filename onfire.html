@@ -4,9 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
+  <meta name="description" content="The Palace — 3rd Edition beer pong tournament. Friday 12 June 2026, midday, outdoors. Live scoreboard, standings, On Fire leaderboard and Palace Odds.">
+  <!-- Social unfurl. TODO: for the most reliable WhatsApp/Twitter preview, change the two URLs below to your absolute GitHub Pages address, e.g. https://YOURNAME.github.io/palace-pong/ -->
+  <meta property="og:title" content="The Palace — 3rd Edition">
+  <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Palace — 3rd Edition">
+  <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
+  <meta name="twitter:image" content="og-image.png">
   <title>On Fire — The Palace 3rd Edition</title>
   <link rel="icon" type="image/png" href="palace-logo.png">
   <link rel="apple-touch-icon" href="palace-logo.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -15,15 +29,25 @@
 <div id="loading-bar"></div>
 <div id="error-banner" hidden></div>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" id="main-nav">
   <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
   <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
   <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
   <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
+  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
+  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
+</nav>
+<div class="more-overlay" id="more-overlay" hidden></div>
+<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
+  <div class="more-sheet-title">More</div>
   <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
   <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
   <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
-</nav>
+  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
+</div>
 
 <div class="status-bar">
   <button id="refresh-btn" title="Refresh now">↻</button>
@@ -82,7 +106,7 @@
       <p style="font-size:.8rem;color:var(--text-muted);margin-top:.4rem">
         Sign up, bring your A-game, and write your name into Palace history.
       </p>
-      <div class="poll-cta" style="margin-top:1rem"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
+      <a class="poll-cta" style="margin-top:1rem" href="#" target="_blank" rel="noopener"><span class="poll-icon">💬</span>Vote in Party Chat Poll</a>
     </div>
   </div>
 
@@ -127,14 +151,13 @@
 function render(c) {
   // Wire WhatsApp links
   const bets = document.getElementById("bets-link");
-  if (bets) bets.href = whatsappUrl("Hi Sayor — I'd like to place a bet on The Palace 3rd Edition On Fire. My pick:");
-  const signup = document.getElementById("signup-link");
-  if (signup) signup.href = whatsappUrl("Hi Sayor — I'd like to sign up for The Palace 3rd Edition (Fri 12 June). My team:");
+  if (bets) bets.href = whatsappUrl("Hi my Bookie Babe, I'd like to back a player to go On Fire. My pick: ____ Stake: ____ (units of $5)");
+  wirePollCtas();
 
   // Toggle registration vs live On Fire
-  document.getElementById("reg-onfire").hidden = !REGISTRATION_MODE;
-  document.getElementById("live-onfire").hidden = REGISTRATION_MODE;
-  if (REGISTRATION_MODE) return;
+  document.getElementById("reg-onfire").hidden = !c.registration;
+  document.getElementById("live-onfire").hidden = c.registration;
+  if (c.registration) return;
 
   const players = c.onfire;
   const maxCount = players[0]?.count || 0;
@@ -170,6 +193,7 @@ function render(c) {
   listEl.innerHTML = players.map((p, i) => {
     const barWidth = maxCount > 0 ? Math.round((p.count / maxCount) * 100) : 0;
     const isZero = p.count === 0;
+    const bumped = prevFire[p.player] !== undefined && p.count > prevFire[p.player];
     const rankIcon = i === 0 && p.count > 0 ? "🔥"
                    : i === 1 && p.count > 0 ? "🔸"
                    : i === 2 && p.count > 0 ? "🔹"
@@ -178,7 +202,7 @@ function render(c) {
       <div class="onfire-row ${isZero ? 'onfire-zero' : ''}">
         <div class="onfire-rank">${rankIcon}</div>
         <div class="onfire-player">
-          <div class="name">${p.player}</div>
+          <div class="name">${p.player}${bumped ? `<span class="fire-pop" title="Just went On Fire!">🔥</span>` : ""}</div>
           <div class="team-tag">${p.teamLabel} · Pool ${p.pool}</div>
         </div>
         <div class="onfire-bar-wrap">
@@ -187,7 +211,14 @@ function render(c) {
         <div class="onfire-count">${p.count}</div>
       </div>`;
   }).join("");
+
+  // Remember counts for next refresh's diff
+  prevFire = {};
+  players.forEach(p => { prevFire[p.player] = p.count; });
 }
+
+// Tracks each player's count between refreshes so we can flag increases.
+let prevFire = {};
 
 initPage(render);
 </script>

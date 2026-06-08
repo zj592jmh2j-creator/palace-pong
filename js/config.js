@@ -10,6 +10,22 @@ function whatsappUrl(message) {
   if (!WHATSAPP_NUMBER) return "#";
   return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message || "")}`;
 }
+
+// Optional party-chat poll link. If set (here or via Meta.pollUrl), pages show a
+// "vote in the party chat poll" option alongside the WhatsApp signup.
+const POLL_URL = "";
+
+// Parse a date that may be written as ISO ("2026-06-12T12:00:00") or with a
+// space ("2026-06-12 12:00:00", as Google Sheets often exports). Treated as local.
+function parseEventDate(s) {
+  if (!s) return new Date(NaN);
+  return new Date(String(s).trim().replace(" ", "T"));
+}
+
+// ─── Event timing / betting defaults (all overridable via the Meta tab) ─────────
+const COUNTDOWN_DEFAULT_ISO = "2026-06-12T12:00:00";   // Meta.countdownTargetISO wins
+const BETS_LOCK_ISO         = "2026-06-12T12:00:00";   // betting locks at start; Meta.betsLockISO wins
+const TAKEOUT               = 0;                        // pari-mutuel pure pool split (no house cut)
 // ─────────────────────────────────────────────────────────────────────────────
 
 const TOURNAMENT = {
@@ -21,6 +37,7 @@ const TOURNAMENT = {
   // "registration" = pre-tournament (teams TBD, schedule/standings stay-tuned).
   // Switch to "live" once the Sheet is populated for this edition.
   phase: "registration",
+  spotsTotal: 20,        // individual competitors (10 teams × 2); overridable via Meta.spotsTotal
   cupsPerTeam: 6,
   formation: "3-2-1"
 };
@@ -99,6 +116,20 @@ function teamLabel(id) {
 
 function poolTeams(pool) {
   return TEAMS.filter(t => t.pool === pool);
+}
+
+// ─── Palace Odds markets (pari-mutuel pools) ───────────────────────────────────
+// Both markets are bet on INDIVIDUAL COMPETITORS (people sign up as players;
+// teams are randomised later). For "winner", a bet wins if the competitor's team
+// wins the Final — so both members of the champion team are winning selections.
+const MARKETS = [
+  { key: "winner", label: "Tournament Winner", source: "players" },
+  { key: "onfire", label: "On Fire Champion",  source: "players" }
+];
+
+// Selections = every competitor in the current roster.
+function marketSelections(key) {
+  return TEAMS.flatMap(t => t.players);
 }
 
 // Human label for an unresolved bracket slot, e.g. "Pool A #2", "Winner QF1".

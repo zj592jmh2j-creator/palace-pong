@@ -4,9 +4,23 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#0C0A0E">
+  <meta name="description" content="The Palace — 3rd Edition beer pong tournament. Friday 12 June 2026, midday, outdoors. Live scoreboard, standings, On Fire leaderboard and Palace Odds.">
+  <!-- Social unfurl. TODO: for the most reliable WhatsApp/Twitter preview, change the two URLs below to your absolute GitHub Pages address, e.g. https://YOURNAME.github.io/palace-pong/ -->
+  <meta property="og:title" content="The Palace — 3rd Edition">
+  <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
+  <meta property="og:image" content="og-image.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="The Palace — 3rd Edition">
+  <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
+  <meta name="twitter:image" content="og-image.png">
   <title>The Palace — 3rd Edition</title>
   <link rel="icon" type="image/png" href="palace-logo.png">
   <link rel="apple-touch-icon" href="palace-logo.png">
+  <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
@@ -15,15 +29,25 @@
 <div id="loading-bar"></div>
 <div id="error-banner" hidden></div>
 
-<nav class="bottom-nav">
+<nav class="bottom-nav" id="main-nav">
   <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
   <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
   <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
   <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
+  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
+  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
+  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
+  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
+  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
+</nav>
+<div class="more-overlay" id="more-overlay" hidden></div>
+<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
+  <div class="more-sheet-title">More</div>
   <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
   <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
   <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
-</nav>
+  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
+</div>
 
 <div class="status-bar">
   <button id="refresh-btn" title="Refresh now">↻</button>
@@ -37,12 +61,14 @@
     <div class="hero-crest">
       <img src="palace-logo.png" alt="The Palace — Beer Pong Tournament, Est. 2026">
     </div>
-    <div class="hero-edition">3rd Edition</div>
+    <div class="hero-edition" id="hero-edition">3rd Edition</div>
     <div class="hero-divider"></div>
     <div class="hero-details">
-      🗓 <strong>Friday 12 June 2026</strong> &nbsp;·&nbsp; 🕛 Midday (12:00)<br>
-      📍 <strong>Outdoors</strong> — venue to be announced
+      🗓 <strong id="hero-date">Friday 12 June 2026</strong> &nbsp;·&nbsp; 🕛 <span id="hero-time">Midday (12:00)</span><br>
+      📍 <span id="hero-venue"><strong>Outdoors</strong> — venue to be announced</span>
     </div>
+    <!-- Live countdown (registration only) -->
+    <div class="countdown" id="countdown" hidden></div>
   </div>
 
   <!-- REGISTRATION: next-edition advert + sign up -->
@@ -51,16 +77,25 @@
       <div class="signup-eyebrow">The 3rd Edition is coming</div>
       <h2 class="signup-title serif">Sign Up Now</h2>
       <p class="signup-sub">
-        Grab a partner and claim your spot. <strong>Friday 12 June, midday</strong>, under open skies —
-        the venue will be announced soon.
+        Sign up solo — teams are drawn at random. Open skies, cold cups, and a crown on the line.
       </p>
-      <div class="poll-cta"><span class="poll-icon">💬</span>Vote in Party Chat Poll</div>
+      <div class="spots" id="spots-block"></div>
+      <a class="poll-cta" href="#" target="_blank" rel="noopener"><span class="poll-icon">💬</span>Vote in Party Chat Poll</a>
+      <div class="signup-secondary" id="signup-secondary" hidden></div>
+      <a class="notify-link" id="notify-venue" href="#" target="_blank" rel="noopener" hidden>📍 Get the venue when it drops</a>
       <div class="signup-note">Teams, fixtures &amp; standings appear here once the poll closes.</div>
     </div>
+    <div class="signup-preview" id="signup-preview" hidden></div>
   </div>
 
   <!-- CHAMPIONS / REIGNING CHAMPIONS (data-driven from the Sheet's last Final) -->
   <div id="champions-banner" hidden></div>
+
+  <!-- CHAMPION SHARE CARD (phase complete) -->
+  <div id="champion-share" hidden></div>
+
+  <!-- PALACE ODDS snapshot (live/complete) -->
+  <div id="home-odds" hidden></div>
 
   <!-- LIVE MODE sections (hidden during registration) -->
   <div id="live-sections" hidden>
@@ -84,30 +119,8 @@
     </div>
   </div>
 
-  <!-- THE STORY -->
-  <div class="card">
-    <div class="card-title"><span class="icon">📖</span>The Story of the 2nd Edition</div>
-    <p style="font-size:.875rem;line-height:1.7">
-      The 1st Edition belonged to <strong class="text-gold">Zackary &amp; Lalaina</strong> — and this year
-      The Palace split them as rivals, Zackary with Tamu, Lalaina with Daniel. Neither could repeat it.
-    </p>
-    <p style="font-size:.875rem;line-height:1.7;margin-top:.5rem">
-      Instead the crown went to <strong class="text-gold">Luca &amp; Kenny</strong>. Luca was
-      <em>mathematical</em> — cold, precise, every cup accounted for. Kenny was the
-      <strong class="text-gold">underdog of the tournament</strong> who chose the biggest stage to
-      erupt, lighting <strong class="text-ember">two On Fires in the Final</strong> itself. They left with the
-      <strong>$100 prize</strong> and <strong>Wantanga FC Champion Shirts</strong>, presented by
-      President <strong class="text-gold">Sayor</strong>.
-    </p>
-    <p style="font-size:.875rem;line-height:1.7;margin-top:.5rem">
-      And the <strong class="text-ember">On Fire</strong> throne, vacant since <strong class="text-gold">Paolo</strong>'s
-      1st-Edition reign, was seized by <strong class="text-ember">Leonie</strong> — the hottest at The Palace,
-      who kept the flame burning even as her team fell in the Final.
-    </p>
-    <a href="halloffame.html" style="display:inline-block;margin-top:.75rem;font-size:.8rem;color:var(--gold);text-decoration:none">
-      View Hall of Fame →
-    </a>
-  </div>
+  <!-- PAST EDITIONS (lore lives in the Hall of Fame) -->
+  <a class="hist-link" href="halloffame.html">📖 Past champions &amp; the founding lore → Hall of Fame</a>
 
 </main>
 
@@ -117,13 +130,72 @@
 <script src="js/app.js"></script>
 <script>
 function render(c) {
+  const t = c.tournament;
+
+  // Hero details — driven by the Meta tab (venue/date/time/edition editable live)
+  setText("hero-edition", t.edition);
+  setText("hero-date", t.date);
+  setText("hero-time", t.startTime);
+  setText("hero-venue", t.venue);
+
   // Toggle registration vs live sections based on tournament phase
   const regEl  = document.getElementById("registration-sections");
   const liveEl_ = document.getElementById("live-sections");
-  if (regEl)  regEl.hidden  = !REGISTRATION_MODE;
-  if (liveEl_) liveEl_.hidden = REGISTRATION_MODE;
-  const signup = document.getElementById("signup-link");
-  if (signup) signup.href = whatsappUrl("Hi Sayor — I'd like to sign up for The Palace 3rd Edition (Fri 12 June). My team:");
+  if (regEl)  regEl.hidden  = !c.registration;
+  if (liveEl_) liveEl_.hidden = c.registration;
+  wirePollCtas();
+  updateCountdown(c);          // live countdown (registration only)
+
+  // Spots remaining + confirmed-competitor preview (Signups tab; one row per player)
+  const n = c.signups.length, total = t.spotsTotal;
+  const pct = total > 0 ? Math.min(100, Math.round((n / total) * 100)) : 0;
+  const spots = document.getElementById("spots-block");
+  if (spots) {
+    spots.innerHTML = `
+      <div class="spots-line">${n > 0 ? `<strong>${n}</strong> of ${total} Competitors in` : `<strong>0</strong> of ${total} Competitors in — be the first`}</div>
+      <div class="spots-bar"><div class="spots-fill" style="width:${pct}%"></div></div>`;
+  }
+  const preview = document.getElementById("signup-preview");
+  if (preview) {
+    if (n > 0) {
+      preview.hidden = false;
+      preview.innerHTML = `<div class="preview-label">Confirmed competitors</div>` +
+        c.signups.map(s => `<span class="preview-chip">✓ ${s.player}</span>`).join("");
+    } else { preview.hidden = true; preview.innerHTML = ""; }
+  }
+
+  // Notify-me about the venue — only while it's still "to be announced"
+  const notify = document.getElementById("notify-venue");
+  if (notify) {
+    const tba = /announce/i.test(t.venue || "");
+    notify.hidden = !tba;
+    if (tba) notify.href = whatsappUrl("Hi Sayor, ping me when The Palace venue is announced.");
+  }
+
+  // Palace Odds — live competitor odds (replaces the old "story" card; shows in all phases)
+  const homeOdds = document.getElementById("home-odds");
+  if (homeOdds) {
+    homeOdds.hidden = false;
+    const m = c.odds.winner;
+    const settled = !!m.settlement && !c.betting.open;
+    const open = c.betting.open;
+    const backed = m.rows.filter(r => r.pool > 0).slice(0, 3);
+    const list = backed.length
+      ? backed.map(r => `<div class="odds-snap-row"><span class="odds-snap-sel">${r.selection === m.favourite ? "★ " : ""}${r.selection}</span><span class="odds-snap-dec">${r.decimal.toFixed(1)}x</span></div>`).join("")
+      : `<p class="text-muted" style="font-size:.85rem">No bets yet — back a competitor to set the line.</p>`;
+    const cta = settled
+      ? `<a href="odds.html" style="display:inline-block;margin-top:.6rem;font-size:.85rem;color:var(--gold);text-decoration:none">View results →</a>`
+      : (open
+          ? `<a class="signup-btn" href="odds.html" style="margin-top:.7rem">🎲 Place a bet</a>`
+          : `<div class="odds-locked" style="margin-top:.6rem">Betting closed</div><a href="odds.html" style="display:inline-block;margin-top:.4rem;font-size:.85rem;color:var(--gold);text-decoration:none">View odds →</a>`);
+    homeOdds.innerHTML = `<div class="card">
+      <div class="card-title"><span class="icon">🎲</span>Palace Odds — to win the tournament</div>
+      <p class="text-muted" style="font-size:.8rem;margin:-.3rem 0 .6rem">Back a competitor. If their team wins the Final, you cash.</p>
+      ${list}
+      <div class="text-muted" style="font-size:.78rem;margin-top:.5rem">Pool: $${m.totalPool} across ${m.betCount} bet${m.betCount !== 1 ? "s" : ""}.</div>
+      ${cta}
+    </div>`;
+  }
 
   // Champions banner — reigning champions during registration, live result otherwise
   const champEl = document.getElementById("champions-banner");
@@ -134,9 +206,9 @@ function render(c) {
     champEl.innerHTML = `
       <div class="champions">
         <div class="champ-crown">👑</div>
-        <div class="champ-eyebrow">${REGISTRATION_MODE ? "Reigning Champions · 2nd Edition" : "2nd Edition · Champions of The Palace"}</div>
+        <div class="champ-eyebrow">${c.registration ? "Reigning Champions · 2nd Edition" : "2nd Edition · Champions of The Palace"}</div>
         <div class="champ-name serif">${teamLabel(finalWinner)}</div>
-        <div class="champ-tag">🏆 ${REGISTRATION_MODE ? "Title to defend" : "Winners of the Final"}</div>
+        <div class="champ-tag">🏆 ${c.registration ? "Title to defend" : "Winners of the Final"}</div>
         ${fireChamp ? `
         <div class="champ-divider"></div>
         <div class="champ-fire">
@@ -152,6 +224,22 @@ function render(c) {
   } else {
     champEl.hidden = true;
     champEl.innerHTML = "";
+  }
+
+  // Champion share card + recap link (phase complete)
+  const share = document.getElementById("champion-share");
+  if (share) {
+    if (c.complete && finalWinner) {
+      share.hidden = false;
+      share.innerHTML = `<div class="card" style="text-align:center">
+        <div class="card-title" style="justify-content:center"><span class="icon">📸</span>Share the moment</div>
+        <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.7rem">A champions card for the group chat.</p>
+        <button class="signup-btn" id="champion-card-btn" type="button">📸 Get the champion card</button>
+        <a href="recap.html" style="display:block;margin-top:.8rem;font-size:.85rem;color:var(--gold);text-decoration:none">View tournament recap →</a>
+      </div>`;
+      const btn = document.getElementById("champion-card-btn");
+      if (btn) btn.addEventListener("click", () => drawChampionCard(c));
+    } else { share.hidden = true; share.innerHTML = ""; }
   }
 
   // Live / Next
@@ -189,9 +277,10 @@ function render(c) {
   document.getElementById("leader-b").textContent = lb ? teamLabel(lb.id) : "—";
   document.getElementById("leader-b-pts").textContent = lb ? `${lb.points} pts · ${lb.diff > 0 ? "+" : ""}${lb.diff} diff` : "—";
 
-  // On Fire snapshot
+  // On Fire snapshot (with a flame pulse when a count just increased)
   const fireEl = document.getElementById("fire-snapshot");
   const top = c.onfire.filter(p => p.count > 0).slice(0, 3);
+  const bump = p => (prevFire[p.player] !== undefined && p.count > prevFire[p.player]) ? `<span class="fire-pop">🔥</span>` : "";
   if (top.length === 0) {
     fireEl.innerHTML = `<p class="text-muted" style="font-size:.85rem">No activations yet — the first flame hasn't been lit.</p>`;
   } else {
@@ -199,13 +288,71 @@ function render(c) {
     fireEl.innerHTML = `
       <div style="margin-bottom:.5rem">
         <span style="font-size:1.5rem">🔥</span>
-        <strong style="font-size:1rem;color:var(--ember-light)">${leader.player}</strong>
+        <strong style="font-size:1rem;color:var(--ember-light)">${leader.player}</strong>${bump(leader)}
         <span class="text-muted" style="font-size:.8rem"> — ${leader.count} activation${leader.count!==1?"s":""} · Hottest at The Palace</span>
       </div>
       ${top.slice(1).map(p => `<div style="font-size:.85rem;color:var(--text-muted);padding:.15rem 0">
-        🔸 ${p.player} <span style="color:var(--gold)">${p.count}</span></div>`).join("")}
+        🔸 ${p.player}${bump(p)} <span style="color:var(--gold)">${p.count}</span></div>`).join("")}
       <a href="onfire.html" style="display:inline-block;margin-top:.6rem;font-size:.8rem;color:var(--gold);text-decoration:none">Full leaderboard →</a>`;
   }
+  c.onfire.forEach(p => { prevFire[p.player] = p.count; });
+}
+
+// Tracks On Fire counts between refreshes for the flame-pulse diff.
+let prevFire = {};
+
+// Champion share card — 1080×1080 PNG drawn on canvas, no libraries.
+function drawChampionCard(c) {
+  const winnerId = c.bracket?.F?.winner;
+  if (!winnerId) return;
+  const W = 1080, H = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = W; canvas.height = H;
+  const x = canvas.getContext("2d");
+  x.textAlign = "center";
+
+  const finish = () => canvas.toBlob(b => {
+    const u = URL.createObjectURL(b);
+    const a = document.createElement("a");
+    a.href = u; a.download = "palace-3rd-edition-champions.png";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(u), 3000);
+  }, "image/png");
+
+  const g = x.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#0A0810"); g.addColorStop(1, "#07060B");
+  x.fillStyle = g; x.fillRect(0, 0, W, H);
+  const rg = x.createRadialGradient(W / 2, 330, 40, W / 2, 330, 560);
+  rg.addColorStop(0, "rgba(200,162,74,.24)"); rg.addColorStop(1, "rgba(200,162,74,0)");
+  x.fillStyle = rg; x.fillRect(0, 0, W, H);
+
+  const drawText = () => {
+    x.fillStyle = "#7A6230"; x.font = "600 32px Georgia, serif";
+    x.fillText("C H A M P I O N S   O F   T H E   P A L A C E", W / 2, 590);
+    x.fillStyle = "#8A6E38"; x.font = "600 28px Arial, sans-serif";
+    x.fillText(("3rd Edition · " + (c.tournament.date || "")).toUpperCase(), W / 2, 636);
+    const tg = x.createLinearGradient(0, 670, 0, 770);
+    tg.addColorStop(0, "#F5DD9A"); tg.addColorStop(1, "#C8A24A");
+    x.fillStyle = tg; x.font = "800 80px Georgia, serif";
+    x.fillText(teamLabel(winnerId), W / 2, 752);
+    const f = c.bracket.F;
+    if (f.cupsHome != null && f.cupsAway != null) {
+      x.fillStyle = "#F2EEE6"; x.font = "600 40px Arial, sans-serif";
+      x.fillText("Final  " + f.cupsHome + " – " + f.cupsAway, W / 2, 826);
+    }
+    if (c.results.onfire) {
+      x.fillStyle = "#FF8C42"; x.font = "600 38px Arial, sans-serif";
+      x.fillText("On Fire Champion: " + c.results.onfire, W / 2, 894);
+    }
+    x.fillStyle = "#8A8290"; x.font = "400 26px Arial, sans-serif";
+    x.fillText(c.tournament.venue || "The Palace", W / 2, 980);
+    finish();
+  };
+
+  const img = new Image();
+  img.onload = () => { const s = 300; x.drawImage(img, (W - s) / 2, 150, s, s); drawText(); };
+  img.onerror = drawText;
+  img.src = "palace-logo.png";
 }
 
 initPage(render);
