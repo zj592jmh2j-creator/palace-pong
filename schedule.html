@@ -10,13 +10,15 @@
   <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
-  <meta property="og:image" content="og-image.png">
+  <meta property="og:image" content="og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Palace — 3rd Edition">
   <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
-  <meta name="twitter:image" content="og-image.png">
+  <meta name="twitter:image" content="og-image.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <title>Schedule — The Palace 3rd Edition</title>
   <link rel="icon" type="image/png" href="palace-logo.png">
   <link rel="apple-touch-icon" href="palace-logo.png">
@@ -29,25 +31,6 @@
 <div id="loading-bar"></div>
 <div id="error-banner" hidden></div>
 
-<nav class="bottom-nav" id="main-nav">
-  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
-  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
-  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
-  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
-  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
-  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
-  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
-  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
-  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
-</nav>
-<div class="more-overlay" id="more-overlay" hidden></div>
-<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
-  <div class="more-sheet-title">More</div>
-  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
-  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
-  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
-  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
-</div>
 
 <div class="status-bar">
   <button id="refresh-btn" title="Refresh now">↻</button>
@@ -106,7 +89,22 @@ function render(c) {
   document.getElementById("reg-placeholder").hidden = !c.registration;
   document.getElementById("live-schedule").hidden = c.registration;
   wirePollCtas();
-  if (c.registration) return;
+  if (c.registration) {
+    // Once the draw is in, the poll CTA is moot — point at the teams instead.
+    if (c.teamsDrawn) {
+      const ph = document.getElementById("reg-placeholder");
+      const title = ph.querySelector(".st-title"), sub = ph.querySelector(".st-sub");
+      const poll = ph.querySelector(".poll-cta");
+      if (title) title.textContent = "Teams are drawn";
+      if (sub) sub.innerHTML = `The matchups are set — the order of play lands here once pools are finalised. <strong>${c.tournament.date} · ${c.tournament.startTime}.</strong>`;
+      if (poll) poll.hidden = true;
+      if (!ph.querySelector(".teams-link")) {
+        ph.querySelector(".stay-tuned").insertAdjacentHTML("beforeend",
+          `<a class="signup-btn teams-link" href="teams.html">👥 See the teams</a>`);
+      }
+    }
+    return;
+  }
 
   const pool = c.orderOfPlay.filter(m => !m.isKO);
   const ko   = c.orderOfPlay.filter(m => m.isKO);

@@ -45,11 +45,25 @@ const TOURNAMENT = {
 // Convenience flag used across pages to switch into pre-tournament UI.
 const REGISTRATION_MODE = TOURNAMENT.phase === "registration";
 
-// NOTE: TEAMS below is the 2nd-Edition roster, retained only for the Hall of
-// Fame / reigning-champion lookups. The 3rd-Edition rosters are TBD — the Teams
-// page shows placeholders while REGISTRATION_MODE is on. Replace these once the
-// new sign-ups are confirmed, then set TOURNAMENT.phase = "live".
-const TEAMS = [
+// Reigning champions — static lore for the pre-tournament banner. (Historical
+// fact, so it must NOT depend on live Sheet data: once the old edition's rows
+// are cleared / TEAMS is replaced, a bracket-derived banner would vanish.)
+// Matches the Hall of Fame. Update after each edition.
+const REIGNING = {
+  edition: "2nd Edition",
+  team: "Luca & Kenny",
+  onfire: "Leonie",
+  onfireCount: 5
+};
+
+// TEAMS is the team registry used across the site (labels, pools, betting,
+// standings, teams page). It is a `let` because `computeAll()` REPLACES it at
+// runtime with the teams read from the Sheet's "Teams" tab when that tab exists
+// (columns: player1 | player2 | pool | code? | photo?). Until the Teams tab is
+// populated, this 2nd-Edition roster stays in place as the fallback — it also
+// backs the Hall of Fame / reigning-champion label lookups. Team ids are slug
+// codes (player1-player2, lowercased) and double as the teams/<id>.jpg filename.
+let TEAMS = [
   { id: "omar-toni",       pool: "A", players: ["Omar", "Toni"] },
   { id: "luca-kenny",      pool: "A", players: ["Luca", "Kenny"] },
   { id: "kevin-guillermo", pool: "A", players: ["Kevin", "Guillermo"] },
@@ -111,24 +125,44 @@ function teamById(id) {
 
 function teamLabel(id) {
   const t = teamById(id);
-  return t ? t.players.join(" & ") : (id || "TBD");
+  if (t) return t.players.join(" & ");
+  if (!id) return "TBD";
+  // Fallback for an id not in the current registry (e.g. a past-edition winner
+  // id once TEAMS has been swapped to this edition): prettify the slug code
+  // "lalaina-daniel" → "Lalaina & Daniel" rather than showing the raw id.
+  return /-/.test(id)
+    ? id.split("-").map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(" & ")
+    : id;
 }
 
 function poolTeams(pool) {
   return TEAMS.filter(t => t.pool === pool);
 }
 
+// Slug code for a team — lowercased player names joined by "-", e.g.
+// ["Xavier","Omar"] → "xavier-omar". Used as the team id AND the image filename
+// (teams/<code>.jpg). Strips accents/punctuation so codes stay URL/file-safe.
+function slugifyName(s) {
+  // NFD splits accented letters into base + combining mark; the final filter
+  // then drops the marks (and any punctuation/spaces) for a clean a–z0–9 slug.
+  return String(s || "").toLowerCase().normalize("NFD").replace(/[^a-z0-9]+/g, "");
+}
+function teamCode(players) {
+  return (players || []).map(slugifyName).filter(Boolean).join("-");
+}
+
 // ─── Palace Odds markets (pari-mutuel pools) ───────────────────────────────────
-// Both markets are bet on INDIVIDUAL COMPETITORS (people sign up as players;
-// teams are randomised later). For "winner", a bet wins if the competitor's team
-// wins the Final — so both members of the champion team are winning selections.
+//  • Winner  → bet on a TEAM. A bet wins if that team wins the Final.
+//  • On Fire → bet on an INDIVIDUAL competitor (the single hottest player).
 const MARKETS = [
-  { key: "winner", label: "Tournament Winner", source: "players" },
+  { key: "winner", label: "Tournament Winner", source: "teams" },
   { key: "onfire", label: "On Fire Champion",  source: "players" }
 ];
 
-// Selections = every competitor in the current roster.
+// Default selections for a market (fallback when the Signups/Teams tabs are
+// empty). Winner → team labels ("Xavier & Omar"); On Fire → individual players.
 function marketSelections(key) {
+  if (key === "winner") return TEAMS.map(t => t.players.join(" & "));
   return TEAMS.flatMap(t => t.players);
 }
 

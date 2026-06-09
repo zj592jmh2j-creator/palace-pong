@@ -46,6 +46,22 @@
 
 /* ─── Reset / base ──────────────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* The hidden attribute must always win — author display rules (e.g. .recap-cta's
+   display:block) otherwise override the UA's [hidden] display:none. */
+[hidden] { display: none !important; }
+
+/* Keyboard focus — visible gold ring without affecting mouse/touch users. */
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; border-radius: 4px; }
+
+/* Respect reduced-motion: stop pulses/shimmers, keep state changes instant. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+}
 html {
   scroll-behavior: smooth;
   background:
@@ -821,10 +837,107 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
 }
 .odds-disclaimer strong { color: var(--gold-light); }
 
-/* Home odds snapshot */
-.odds-snap-row { display: flex; align-items: baseline; gap: .6rem; padding: .35rem 0; font-size: .9rem; }
-.odds-snap-sel { flex: 1; font-weight: 600; color: var(--text-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.odds-snap-dec { font-weight: 800; color: var(--gold-light); font-variant-numeric: tabular-nums; }
+/* Home odds snapshot — the "odds board" card */
+.odds-card-head { display: flex; align-items: center; justify-content: space-between; gap: .6rem; margin-bottom: .55rem; }
+.odds-card-status {
+  flex: 0 0 auto; display: inline-flex; align-items: center; gap: .35rem;
+  font-size: .62rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase;
+  padding: .28rem .6rem; border-radius: 20px; white-space: nowrap;
+}
+.odds-card-status.open  { color: var(--live); background: var(--live-dim); border: 1px solid rgba(78,232,138,.3); }
+.odds-card-status.closed{ color: var(--text-muted); background: rgba(255,255,255,.05); border: 1px solid var(--hairline); }
+.odds-status-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--live);
+  box-shadow: 0 0 0 0 rgba(78,232,138,.5); animation: pulse-live 1.6s ease-in-out infinite;
+}
+.odds-card-tagline { font-size: .82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: .85rem; }
+
+.odds-board { display: flex; flex-direction: column; gap: .45rem; }
+.odds-line {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .55rem .7rem; border-radius: 10px;
+  background: rgba(255,255,255,.035); border: 1px solid var(--hairline);
+}
+.odds-line.fav {
+  background: linear-gradient(90deg, var(--gold-subtle), rgba(200,162,74,.04));
+  border-color: var(--gold-hairline);
+}
+.odds-line-rank {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: .72rem; font-weight: 800; color: var(--text-muted);
+  background: rgba(255,255,255,.06); font-variant-numeric: tabular-nums;
+}
+.odds-line.fav .odds-line-rank { color: #1a1206; background: linear-gradient(135deg, var(--gold-bright), var(--gold)); }
+.odds-line-main { flex: 1 1 auto; min-width: 0; }
+.odds-line-name {
+  display: flex; align-items: center; gap: .4rem; flex-wrap: wrap;
+  font-size: .95rem; font-weight: 700; color: var(--text); line-height: 1.2;
+}
+.odds-line.fav .odds-line-name { color: var(--gold-light); }
+.odds-line-crown { color: var(--gold-light); }
+.odds-line-tag {
+  font-size: .55rem; font-weight: 800; text-transform: uppercase; letter-spacing: .08em;
+  color: var(--gold-light); background: var(--gold-subtle); border: 1px solid var(--gold-hairline);
+  padding: .1rem .4rem; border-radius: 20px;
+}
+.odds-line-bar { height: 5px; border-radius: 4px; background: rgba(255,255,255,.07); overflow: hidden; margin-top: .4rem; }
+.odds-line-bar span {
+  display: block; height: 100%; border-radius: 4px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold)); transition: width .6s ease;
+}
+.odds-line.fav .odds-line-bar span { background: linear-gradient(90deg, var(--gold), var(--gold-bright)); box-shadow: 0 0 10px rgba(200,162,74,.45); }
+.odds-line-dec {
+  flex: 0 0 auto; font-size: 1.25rem; font-weight: 800; color: var(--gold-light);
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.odds-line-dec small { font-size: .7em; font-weight: 700; color: var(--text-muted); margin-left: 1px; }
+.odds-line.fav .odds-line-dec { color: var(--gold-bright); }
+
+.odds-empty {
+  display: flex; align-items: center; gap: .6rem;
+  font-size: .85rem; color: var(--text-muted); line-height: 1.5;
+  padding: .9rem 1rem; border-radius: 10px;
+  background: rgba(255,255,255,.03); border: 1px dashed var(--hairline);
+}
+.odds-empty-ico { font-size: 1.25rem; }
+
+.odds-card-foot {
+  display: flex; align-items: stretch; gap: .9rem;
+  margin-top: .85rem; padding-top: .8rem; border-top: 1px solid var(--hairline);
+}
+.odds-stat { display: flex; flex-direction: column; }
+.odds-stat-num { font-size: 1.15rem; font-weight: 800; color: var(--gold-light); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.odds-stat-lbl { font-size: .7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; margin-top: .15rem; }
+.odds-stat-div { width: 1px; background: var(--hairline); }
+.odds-card-link { display: inline-block; margin-top: .8rem; font-size: .85rem; font-weight: 600; color: var(--gold); text-decoration: none; min-height: 44px; line-height: 44px; }
+.odds-card-link:active { color: var(--gold-bright); }
+
+/* Odds page — taller betting lines (same board look + payout + Back button) */
+.odds-line.bet { align-items: flex-start; gap: .6rem; padding: .7rem .75rem; }
+.odds-line.bet .odds-line-rank { margin-top: .05rem; }
+.odds-line-rank.empty { background: rgba(255,255,255,.04); }
+.odds-line-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; }
+.odds-line.bet .odds-line-name { flex: 1 1 auto; }
+.odds-line-tag.muted { color: var(--text-muted); background: rgba(255,255,255,.05); border-color: var(--hairline); }
+.odds-line.bet .odds-line-bar { margin: .5rem 0; }
+.odds-line-foot { display: flex; align-items: center; justify-content: space-between; gap: .6rem; flex-wrap: wrap; }
+.odds-line-return { font-size: .8rem; color: var(--text-soft); font-variant-numeric: tabular-nums; }
+.odds-line-return strong { color: var(--gold-light); }
+/* Unbacked selections — compact single-line rows so 10–20 of them don't
+   stretch the page. Name left, light "Back this" right. */
+.odds-line.noback {
+  opacity: .8; align-items: center;
+  padding: .3rem .3rem .3rem .75rem;
+}
+.odds-line.noback .odds-line-name { color: var(--text-soft); font-weight: 600; flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.odds-noback { font-size: .68rem; text-transform: uppercase; letter-spacing: .06em; color: var(--text-dim); white-space: nowrap; }
+/* Recessed "Back this" for selections with no backers yet */
+.odds-back.ghost {
+  background: transparent; color: var(--gold-light);
+  border: 1px solid var(--gold-hairline); box-shadow: none;
+}
+.odds-back.ghost:active { background: var(--gold-subtle); }
 
 /* ─── Snapshot widgets (Home) ───────────────────────────────────────────────── */
 .snapshot-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; margin-bottom: 1rem; }
@@ -928,11 +1041,28 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
 .team-card {
   background: linear-gradient(180deg, var(--bg-card-2), rgba(16,13,22,.6));
   border: 1px solid var(--border-card);
-  border-radius: var(--radius-sm); padding: .95rem;
+  border-radius: var(--radius-sm); padding: .95rem; overflow: hidden;
   transition: border-color .2s, transform .2s; backdrop-filter: blur(6px);
   box-shadow: var(--shadow-card);
 }
 .team-card:hover { border-color: var(--gold-hairline); transform: translateY(-2px); }
+/* Team photo — full-bleed banner above the roster, with a monogram fallback */
+.team-photo {
+  position: relative; margin: -.95rem -.95rem .75rem;
+  aspect-ratio: 16 / 11; overflow: hidden;
+  border-bottom: 1px solid var(--border-card);
+  background: linear-gradient(135deg, rgba(200,162,74,.22), rgba(26,22,38,.95));
+  display: flex; align-items: center; justify-content: center;
+}
+.team-photo img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; display: block;
+}
+.team-photo-fallback {
+  font-family: var(--serif); font-weight: 800; font-size: 1.6rem;
+  color: var(--gold-light); opacity: .55; letter-spacing: .04em;
+}
+.team-card:hover .team-photo img { transform: scale(1.04); transition: transform .3s ease; }
 .team-card .pool-tag {
   font-size: .6rem; font-weight: 800; text-transform: uppercase;
   letter-spacing: .12em; color: var(--gold-dim); margin-bottom: .4rem;

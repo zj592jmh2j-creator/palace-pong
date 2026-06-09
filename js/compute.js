@@ -427,6 +427,27 @@ function computeRecap(poolMatches, knockout, onfireRows) {
   return { mostCups, biggestBlowout, totalCups, fireChamp, totalActivations };
 }
 
+// ── Teams (from the Sheet's "Teams" tab) ───────────────────────────────────────
+// Columns (case-insensitive): player1 | player2 | pool? | code? | photo?.
+// The id is an explicit `code`/`id` if given, else the derived slug
+// (player1-player2). Pool may be blank ("teams drawn, pools later").
+function parseSheetTeams(rows) {
+  const get = (row, name) => {
+    const key = Object.keys(row).find(k => k.toLowerCase() === name);
+    return key ? String(row[key] || "").trim() : "";
+  };
+  return (rows || []).map(r => {
+    const players = [get(r, "player1"), get(r, "player2")].filter(Boolean);
+    if (!players.length) return null;
+    const code  = get(r, "code") || get(r, "id") || teamCode(players);
+    const pool  = (get(r, "pool").toUpperCase().match(/[AB]/) || [null])[0];
+    const photo = get(r, "photo");
+    const team  = { id: code, players, pool };
+    if (photo) team.photo = photo;
+    return team;
+  }).filter(Boolean);
+}
+
 // ── Master compute ────────────────────────────────────────────────────────────
 
 // Empty-but-valid computed shape — used before first successful load or when
@@ -439,6 +460,12 @@ function emptyComputed() {
 }
 
 function computeAll(data) {
+  // Teams come from the Sheet's "Teams" tab when present; otherwise the config
+  // fallback roster stays in place. This MUST run before standings/bracket,
+  // which read poolTeams()/teamLabel() off the global TEAMS registry.
+  const sheetTeams = parseSheetTeams(data.teams);
+  if (sheetTeams.length) TEAMS = sheetTeams;
+
   const standings = computeAllStandings(data.poolMatches);
 
   // Pool completion flags — a pool's slots only seed once all 10 are final.
@@ -469,29 +496,47 @@ function computeAll(data) {
     bettor: (b.bettor || "").trim(),
     market: b.market, selection: b.selection, stake: b.stake
   }));
-  // Betting selections = the individual competitors who signed up (Signups tab).
-  // Fall back to the roster only if no one has signed up yet.
+  // Per-market betting selections:
+  //  • Winner  → TEAMS (team labels, e.g. "Xavier & Omar").
+  //  • On Fire → individual competitors (Signups tab; roster fallback).
   const competitors = signups.length
     ? [...new Set(signups.map(s => s.player))]
-    : marketSelections("winner");
+    : marketSelections("onfire");
+  const teamSelections = TEAMS.map(t => t.players.join(" & "));
+  const selectionsFor = key => (key === "winner" ? teamSelections : competitors);
+
+  // House shorthand: a Winner bet typed as a single PLAYER's name counts as a
+  // bet on that player's team ("Zackary" → "Zackary & Tamu"). Each player is on
+  // exactly one team, so the mapping is unambiguous. Team labels/codes still
+  // match directly via matchSelection; this only catches what it can't.
+  const normName = s => String(s || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const playerToTeam = {};
+  TEAMS.forEach(t => t.players.forEach(p => { playerToTeam[normName(p)] = t.players.join(" & "); }));
+  const betsForOdds = bets.map(b => {
+    if (normalizeMarketKey(b.market) !== "winner") return b;
+    if (matchSelection(b.selection, teamSelections)) return b;
+    const viaPlayer = playerToTeam[normName(b.selection)];
+    return viaPlayer ? { ...b, selection: viaPlayer } : b;
+  });
+
   const odds = {};
   for (const m of MARKETS) {
-    odds[m.key] = computeMarketOdds(bets, m.key, competitors, TAKEOUT);
+    odds[m.key] = computeMarketOdds(betsForOdds, m.key, selectionsFor(m.key), TAKEOUT);
   }
   const betting = bettingState(tournament);
 
-  // Winning selections per market (competitor-level):
-  //  • Winner  → BOTH players of the champion team (bet wins if your competitor's team wins).
+  // Winning selection per market:
+  //  • Winner  → the champion TEAM's label (a single selection).
   //  • On Fire → the single top player.
-  const champTeam = bracket.F && bracket.F.winner ? teamById(bracket.F.winner) : null;
-  const winnerWinners = champTeam ? champTeam.players.slice() : [];
+  const champCode = bracket.F && bracket.F.winner ? bracket.F.winner : null;
+  const winnerWinners = champCode ? [teamLabel(champCode)] : [];
   const onfireWinner = (onfire[0] && onfire[0].count > 0) ? [onfire[0].player] : [];
   odds.winner.settlement = settleMarket(odds.winner, winnerWinners);
   odds.onfire.settlement = settleMarket(odds.onfire, onfireWinner);
 
   const results = {
-    winner: bracket.F && bracket.F.winner ? teamLabel(bracket.F.winner) : null, // team label (recap/banner)
-    winnerPlayers: winnerWinners,                                               // champion competitors
+    winner: champCode ? teamLabel(champCode) : null,   // champion team label (recap/banner)
+    winnerTeam: champCode || null,                     // champion team id/code
     onfire: onfireWinner[0] || null
   };
 
@@ -501,5 +546,7 @@ function computeAll(data) {
            poolAFinal, poolBFinal,
            tournament, phase: tournament.phase, registration, complete,
            signups, bets, odds, betting, results, recap,
+           teams: TEAMS.slice(),
+           teamsDrawn: sheetTeams.length > 0,   // true once the Sheet's Teams tab is filled
            fetchedAt: data.fetchedAt };
 }

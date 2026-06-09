@@ -10,13 +10,15 @@
   <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
-  <meta property="og:image" content="og-image.png">
+  <meta property="og:image" content="og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Palace — 3rd Edition">
   <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
-  <meta name="twitter:image" content="og-image.png">
+  <meta name="twitter:image" content="og-image.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <title>Teams — The Palace 3rd Edition</title>
   <link rel="icon" type="image/png" href="palace-logo.png">
   <link rel="apple-touch-icon" href="palace-logo.png">
@@ -26,24 +28,12 @@
 </head>
 <body>
 
-<nav class="bottom-nav" id="main-nav">
-  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
-  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
-  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
-  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
-  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
-  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
-  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
-  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
-  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
-</nav>
-<div class="more-overlay" id="more-overlay" hidden></div>
-<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
-  <div class="more-sheet-title">More</div>
-  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
-  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
-  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
-  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
+<div id="loading-bar"></div>
+<div id="error-banner" hidden></div>
+
+<div class="status-bar">
+  <button id="refresh-btn" title="Refresh now">↻</button>
+  <span id="last-updated">Loading…</span>
 </div>
 
 <div class="page-header">
@@ -65,13 +55,9 @@
     <div class="team-grid" id="tbd-teams"></div>
   </div>
 
-  <!-- LIVE teams -->
-  <div id="live-teams" hidden>
-    <div class="section-divider">Pool A</div>
-    <div class="team-grid" id="pool-a-teams"></div>
-    <div class="section-divider" style="margin-top:1.25rem">Pool B</div>
-    <div class="team-grid" id="pool-b-teams"></div>
-  </div>
+  <!-- DRAWN teams (from the Sheet's Teams tab) — pooled when pools are set,
+       otherwise a single grid while the draw stands but pools are still TBD. -->
+  <div id="live-teams" hidden></div>
 
 </main>
 
@@ -80,15 +66,48 @@
 <script src="js/compute.js"></script>
 <script src="js/app.js"></script>
 <script>
-function renderPool(pool, containerId) {
-  const teams = poolTeams(pool);
-  document.getElementById(containerId).innerHTML = teams.map(t => `
-    <div class="team-card">
-      <div class="pool-tag">Pool ${t.pool}</div>
-      <div class="players">
-        ${t.players.map(p => `<div class="player-row">${playerIcon(p)} ${p}</div>`).join("")}
-      </div>
-    </div>`).join("");
+// Team photo with graceful fallback. Drop a file at teams/<team-id>.jpg
+// (e.g. teams/omar-toni.jpg) or set a `photo` path on the team in config.js.
+// If no image is found, a gold monogram placeholder shows instead.
+function teamPhoto(t) {
+  const src = t.photo || `teams/${t.id}.jpg`;
+  const initials = t.players.map(p => p.charAt(0).toUpperCase()).join("");
+  return `<div class="team-photo">
+    <span class="team-photo-fallback">${initials}</span>
+    <img src="${src}" alt="${t.players.join(" & ")}" loading="lazy"
+         onerror="this.closest('.team-photo').classList.add('noimg'); this.remove();">
+  </div>`;
+}
+
+function teamCardHTML(t) {
+  return `<div class="team-card">
+    ${teamPhoto(t)}
+    ${t.pool ? `<div class="pool-tag">Pool ${t.pool}</div>` : ""}
+    <div class="players">
+      ${t.players.map(p => `<div class="player-row">${playerIcon(p)} ${p}</div>`).join("")}
+    </div>
+  </div>`;
+}
+
+function teamGrid(teams) {
+  return `<div class="team-grid">${teams.map(teamCardHTML).join("")}</div>`;
+}
+
+// Render the drawn teams. Group by pool when pools are assigned; otherwise show
+// one grid (the draw is set, pools come later with the schedule).
+function renderTeams(teams) {
+  const a = teams.filter(t => t.pool === "A");
+  const b = teams.filter(t => t.pool === "B");
+  const un = teams.filter(t => !t.pool);
+  let html = "";
+  if (a.length || b.length) {
+    if (a.length) html += `<div class="section-divider">Pool A</div>${teamGrid(a)}`;
+    if (b.length) html += `<div class="section-divider" style="margin-top:1.25rem">Pool B</div>${teamGrid(b)}`;
+    if (un.length) html += `<div class="section-divider" style="margin-top:1.25rem">Awaiting pool</div>${teamGrid(un)}`;
+  } else {
+    html = `<div class="section-divider">The Teams · ${teams.length}</div>${teamGrid(teams)}`;
+  }
+  document.getElementById("live-teams").innerHTML = html;
 }
 
 // Registration: list confirmed individual competitors, then fill the remaining
@@ -121,14 +140,24 @@ function playerIcon(player) {
 }
 
 function render(c) {
-  document.getElementById("reg-teams").hidden = !c.registration;
-  document.getElementById("live-teams").hidden = c.registration;
+  const hasTeams = c.teams && c.teams.length > 0;
+  const reg = document.getElementById("reg-teams");
+  const live = document.getElementById("live-teams");
   wirePollCtas();
-  if (c.registration) {
-    renderRegistrationTeams("tbd-teams", c.signups, c.tournament.spotsTotal);
+
+  // Once the draw is in the Sheet, show the teams (with photos) in every phase.
+  // Until then, keep the registration "sign up solo / field" view.
+  if (hasTeams) {
+    reg.hidden = true; live.hidden = false;
+    renderTeams(c.teams);
+    setText("teams-subtitle", `3rd Edition · ${c.teams.length} teams drawn`);
   } else {
-    renderPool("A", "pool-a-teams");
-    renderPool("B", "pool-b-teams");
+    reg.hidden = !c.registration; live.hidden = c.registration;
+    if (c.registration) {
+      renderRegistrationTeams("tbd-teams", c.signups, c.tournament.spotsTotal);
+    } else {
+      renderTeams([]); // nothing to show; live view stays empty
+    }
   }
 }
 

@@ -13,6 +13,43 @@ const appState = {
   error: null
 };
 
+// ─── Navigation (single source of truth, injected into every page) ───────────
+// Edit links here once instead of in all the HTML files. The bottom bar shows
+// the four primary tabs + secondary tabs (collapsed behind "More" on narrow
+// screens via CSS); the "More" sheet lists the secondary tabs with full labels.
+const NAV_PRIMARY = [
+  { href: "index.html",     icon: "🏠", label: "Home" },
+  { href: "schedule.html",  icon: "📅", label: "Schedule" },
+  { href: "standings.html", icon: "🏆", label: "Standings" },
+  { href: "onfire.html",    icon: "🔥", label: "On Fire" }
+];
+const NAV_SECONDARY = [
+  { href: "rules.html",      icon: "📜", label: "Rules",        short: "Rules" },
+  { href: "teams.html",      icon: "👥", label: "Teams",        short: "Teams" },
+  { href: "halloffame.html", icon: "👑", label: "Hall of Fame", short: "Hall" },
+  { href: "odds.html",       icon: "🎲", label: "Odds",         short: "Odds" }
+];
+
+function injectNav() {
+  if (document.getElementById("main-nav")) return;   // static markup already present
+  const link = (n, cls, text) =>
+    `<a href="${n.href}"${cls ? ` class="${cls}"` : ""}><span class="nav-icon">${n.icon}</span>${text}</a>`;
+  const bar = NAV_PRIMARY.map(n => link(n, "", n.label)).join("") +
+              NAV_SECONDARY.map(n => link(n, "nav-extra", n.short)).join("");
+  const sheet = NAV_SECONDARY.map(n => link(n, "", n.label)).join("");
+  document.body.insertAdjacentHTML("afterbegin", `
+    <nav class="bottom-nav" id="main-nav">
+      ${bar}
+      <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
+    </nav>
+    <div class="more-overlay" id="more-overlay" hidden></div>
+    <div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
+      <div class="more-sheet-title">More</div>
+      ${sheet}
+    </div>`);
+}
+injectNav();
+
 // Called by each page: pass a render function, get auto-refresh for free
 function initPage(renderFn) {
   appState.renderFn = renderFn;

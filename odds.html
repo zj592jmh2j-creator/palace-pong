@@ -10,13 +10,15 @@
   <meta property="og:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors. Live scoreboard, On Fire leaderboard & Palace Odds.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://YOURNAME.github.io/palace-pong/">
-  <meta property="og:image" content="og-image.png">
+  <meta property="og:image" content="og-image.jpg">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="The Palace — 3rd Edition">
   <meta name="twitter:description" content="Beer pong tournament · Friday 12 June 2026 · Midday · Outdoors.">
-  <meta name="twitter:image" content="og-image.png">
+  <meta name="twitter:image" content="og-image.jpg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <title>Palace Odds — The Palace 3rd Edition</title>
   <link rel="icon" type="image/png" href="palace-logo.png">
   <link rel="apple-touch-icon" href="palace-logo.png">
@@ -29,25 +31,6 @@
 <div id="loading-bar"></div>
 <div id="error-banner" hidden></div>
 
-<nav class="bottom-nav" id="main-nav">
-  <a href="index.html"><span class="nav-icon">🏠</span>Home</a>
-  <a href="schedule.html"><span class="nav-icon">📅</span>Schedule</a>
-  <a href="standings.html"><span class="nav-icon">🏆</span>Standings</a>
-  <a href="onfire.html"><span class="nav-icon">🔥</span>On Fire</a>
-  <a href="rules.html" class="nav-extra"><span class="nav-icon">📜</span>Rules</a>
-  <a href="teams.html" class="nav-extra"><span class="nav-icon">👥</span>Teams</a>
-  <a href="halloffame.html" class="nav-extra"><span class="nav-icon">👑</span>Hall</a>
-  <a href="odds.html" class="nav-extra"><span class="nav-icon">🎲</span>Odds</a>
-  <button type="button" class="nav-more-btn" id="nav-more-btn" aria-expanded="false" aria-haspopup="true"><span class="nav-icon">⋯</span>More</button>
-</nav>
-<div class="more-overlay" id="more-overlay" hidden></div>
-<div class="more-sheet" id="more-sheet" hidden role="menu" aria-label="More pages">
-  <div class="more-sheet-title">More</div>
-  <a href="rules.html"><span class="nav-icon">📜</span>Rules</a>
-  <a href="teams.html"><span class="nav-icon">👥</span>Teams</a>
-  <a href="halloffame.html"><span class="nav-icon">👑</span>Hall of Fame</a>
-  <a href="odds.html"><span class="nav-icon">🎲</span>Odds</a>
-</div>
 
 <div class="status-bar">
   <button id="refresh-btn" title="Refresh now">↻</button>
@@ -78,26 +61,40 @@ function backHref(selection, marketLabel) {
   return whatsappUrl(`Hi my Bookie Babe, I'd like to back ${selection} for ${marketLabel}. Stake: ____ (units of $${UNIT})`);
 }
 
-function selectionRow(r, market, isFav, open) {
+// One selection line, styled to match the home "odds board". Backed rows show a
+// pool-share bar, the live multiplier and a "$5 returns ~$X" payout preview;
+// unbacked rows are recessed with a ghost "Back this" button.
+function selectionRow(r, market, isFav, open, rank, maxPct) {
+  const backBtn = open
+    ? `<a class="odds-back${r.pool > 0 ? "" : " ghost"}" href="${backHref(r.selection, market.label)}" target="_blank" rel="noopener">Back this</a>`
+    : "";
+
+  // Unbacked → compact one-liner (10–20 of these shouldn't dominate the page).
   if (r.pool <= 0) {
-    return `<div class="odds-row noback">
-      <div class="odds-sel">${r.selection}</div>
-      <div class="odds-noback">no backers yet</div>
-      ${open ? `<a class="odds-back" href="${backHref(r.selection, market.label)}" target="_blank" rel="noopener">Back this</a>` : ""}
+    return `<div class="odds-line bet noback">
+      <div class="odds-line-name">${r.selection}</div>
+      ${open ? backBtn : `<span class="odds-noback">no backers yet</span>`}
     </div>`;
   }
+
   const dec = r.decimal;
   const ret = Math.round(UNIT * dec);
-  const tag = isFav ? `<span class="odds-fav">★ Pool favourite</span>`
-            : (r.backers === 1 ? `<span class="odds-only">only backer</span>` : "");
-  return `<div class="odds-row">
-    <div class="odds-sel">${r.selection} ${tag}</div>
-    <div class="odds-meta">
-      <span class="odds-dec">${dec.toFixed(1)}x</span>
-      <span class="odds-imp">${Math.round(r.impliedPct * 100)}%</span>
-      <span class="odds-hint">$${UNIT} returns ~$${ret}</span>
+  const w = maxPct > 0 ? Math.max(8, Math.round((r.impliedPct / maxPct) * 100)) : 0;
+  const tag = isFav ? `<span class="odds-line-tag">Favourite</span>`
+            : (r.backers === 1 ? `<span class="odds-line-tag muted">Only backer</span>` : "");
+  return `<div class="odds-line bet${isFav ? " fav" : ""}">
+    <span class="odds-line-rank">${rank}</span>
+    <div class="odds-line-main">
+      <div class="odds-line-top">
+        <div class="odds-line-name">${isFav ? `<span class="odds-line-crown">★</span>` : ""}${r.selection}${tag}</div>
+        <span class="odds-line-dec">${dec.toFixed(1)}<small>×</small></span>
+      </div>
+      <div class="odds-line-bar"><span style="width:${w}%"></span></div>
+      <div class="odds-line-foot">
+        <span class="odds-line-return">$${UNIT} returns <strong>~$${ret}</strong> · ${Math.round(r.impliedPct * 100)}% chance</span>
+        ${backBtn}
+      </div>
     </div>
-    ${open ? `<a class="odds-back" href="${backHref(r.selection, market.label)}" target="_blank" rel="noopener">Back this</a>` : ""}
   </div>`;
 }
 
@@ -127,21 +124,45 @@ function marketCard(c, market) {
   const settled = !!m.settlement && !c.betting.open;
   const open = c.betting.open;   // betting is open from registration until lock
 
-  const stateLine = settled
-    ? `<div class="odds-locked">SETTLED — final pool</div>`
+  const status = settled
+    ? `<span class="odds-card-status closed">Settled</span>`
     : (open
-        ? `<div class="odds-open">Odds float with the pool. Locks at the start of the tournament (12:00, midday).</div>`
-        : `<div class="odds-locked">BETTING CLOSED — odds final</div>`);
-  const pool = `<div class="odds-pool">Pool: <strong>${money(m.totalPool)}</strong> across ${m.betCount} bet${m.betCount !== 1 ? "s" : ""}.</div>`;
+        ? `<span class="odds-card-status open"><span class="odds-status-dot"></span>Betting open</span>`
+        : `<span class="odds-card-status closed">Betting closed</span>`);
+  const note = settled ? ""
+    : (open
+        ? `<p class="odds-card-tagline">Odds float with the pool and lock at the start of the tournament (12:00, midday). Your payout is set by the final pool.</p>`
+        : `<p class="odds-card-tagline">Betting is closed — these odds are final.</p>`);
+
+  const unit = market.source === "teams" ? "team" : "competitor";
   const firstNote = (m.totalPool === 0 && open)
-    ? `<p class="odds-closed-note">No bets yet — back a competitor to set the first line.</p>` : "";
-  // Always list selections so a bet can be placed (unbacked show "no backers yet").
-  const rows = firstNote + m.rows.map(r => selectionRow(r, market, r.selection === m.favourite, open)).join("");
+    ? `<div class="odds-empty"><span class="odds-empty-ico">🎯</span><span>No bets yet — back a ${unit} to set the opening line.</span></div>` : "";
+
+  // Bars scale to the favourite (longest), matching the home card.
+  const backed = m.rows.filter(r => r.pool > 0);
+  const maxPct = backed.length ? Math.max(...backed.map(r => r.impliedPct)) : 1;
+  // Always list every selection so a bet can be placed; rank only the backed ones.
+  let rank = 0;
+  const rows = m.rows.map(r => {
+    const isBacked = r.pool > 0;
+    if (isBacked) rank++;
+    return selectionRow(r, market, r.selection === m.favourite, open, isBacked ? rank : null, maxPct);
+  }).join("");
+
+  const poolFoot = `<div class="odds-card-foot">
+    <div class="odds-stat"><span class="odds-stat-num">${money(m.totalPool)}</span><span class="odds-stat-lbl">in the pool</span></div>
+    <div class="odds-stat-div"></div>
+    <div class="odds-stat"><span class="odds-stat-num">${m.betCount}</span><span class="odds-stat-lbl">bet${m.betCount !== 1 ? "s" : ""} placed</span></div>
+  </div>`;
 
   return `<div class="card odds-card">
-    <div class="card-title"><span class="icon">${market.key === "onfire" ? "🔥" : "🏆"}</span>${market.label}</div>
-    ${pool}${stateLine}${settled ? settlementPanel(m) : ""}
-    <div class="odds-rows">${rows}</div>
+    <div class="odds-card-head">
+      <div class="card-title" style="margin-bottom:0"><span class="icon">${market.key === "onfire" ? "🔥" : "🏆"}</span>${market.label}</div>
+      ${status}
+    </div>
+    ${note}${settled ? settlementPanel(m) : ""}${firstNote}
+    <div class="odds-board">${rows}</div>
+    ${poolFoot}
   </div>`;
 }
 
@@ -153,7 +174,7 @@ function render(c) {
 
   const note = c.tournament.oddsNote ? ` ${c.tournament.oddsNote}` : "";
   document.getElementById("odds-disclaimer").innerHTML =
-    `<strong>The House is Sayor.</strong> The Palace is a friends' game. You back <strong>individual competitors</strong> — teams are drawn later, so if your competitor's team wins, you cash. This is a pari-mutuel pool: the pot is split in proportion to stake among backers of the winning side (and since two players share each title, backers of <em>either</em> champion split the Winner pool). Odds float until betting locks; your payout is set by the final pool. The House settles in person. If nobody backed the winner, all stakes are refunded. Keep stakes to $${UNIT} units so the pool stays sane.${note}`;
+    `<strong>The House is Sayor.</strong> The Palace is a friends' game. <strong>Tournament Winner</strong> is bet on a <strong>team</strong> — back the pair you fancy and if they win the Final, you cash. <strong>On Fire</strong> is bet on an <strong>individual competitor</strong> — the single hottest player. Both are pari-mutuel pools: the pot is split in proportion to stake among backers of the winning side. Odds float until betting locks; your payout is set by the final pool. The House settles in person. If nobody backed the winner, all stakes are refunded. Keep stakes to $${UNIT} units so the pool stays sane.${note}`;
 }
 
 initPage(render);

@@ -8,7 +8,8 @@ const TABS = {
   ONFIRE:   "OnFire",
   META:     "Meta",      // key/value event config (optional)
   SIGNUPS:  "Signups",   // player (one row per competitor) (optional)
-  BETS:     "Bets"       // timestamp | bettor | market | selection | stake (optional)
+  BETS:     "Bets",      // timestamp | bettor | market | selection | stake (optional)
+  TEAMS:    "Teams"      // player1 | player2 | pool? | code? | photo? (optional)
 };
 
 function gvizUrl(tabName) {
@@ -111,7 +112,8 @@ async function fetchAllData() {
     ["onfire",      TABS.ONFIRE],
     ["meta",        TABS.META],
     ["signups",     TABS.SIGNUPS],
-    ["bets",        TABS.BETS]
+    ["bets",        TABS.BETS],
+    ["teams",       TABS.TEAMS]
   ];
   const results = await Promise.allSettled(plan.map(([, name]) => fetchTab(name)));
 
@@ -134,5 +136,8 @@ async function fetchAllData() {
   out.signups = (hasColumns(out.signups, ["player"]) || hasColumns(out.signups, ["player1"]))
                   ? out.signups : [];
   out.bets    = onlyIfColumns(out.bets, ["market", "selection", "stake"]);
+  // Teams tab needs at least the two player columns; otherwise the gviz
+  // first-sheet fallback would masquerade as teams.
+  out.teams   = onlyIfColumns(out.teams, ["player1", "player2"]);
   return out;
 }
