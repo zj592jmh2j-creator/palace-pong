@@ -26,7 +26,7 @@
   <link rel="stylesheet" href="css/style.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
-<body>
+<body class="teams-page">
 
 <div id="loading-bar"></div>
 <div id="error-banner" hidden></div>
@@ -84,7 +84,7 @@ function teamCardHTML(t) {
     ${teamPhoto(t)}
     ${t.pool ? `<div class="pool-tag">Pool ${t.pool}</div>` : ""}
     <div class="players">
-      ${t.players.map(p => `<div class="player-row">${playerIcon(p)} ${p}</div>`).join("")}
+      ${t.players.map(p => `<div class="player-row"><span class="player-badge">${playerIcon(p)}</span><span class="player-name">${p}</span></div>`).join("")}
     </div>
   </div>`;
 }
@@ -133,10 +133,13 @@ function renderRegistrationTeams(containerId, signups, spotsTotal) {
   if (label) label.textContent = `The Field · ${signups.length} of ${spotsTotal} in`;
 }
 
+// Honours badges by player name — cumulative across editions (see HONOURS in
+// config.js): a 👑 per title won, a 🔥 per On Fire crown, stacking. Players with
+// no accolades show the default 👤 silhouette.
 function playerIcon(player) {
-  if (player === "Lalaina" || player === "Zackary") return "👑";
-  if (player === "Paolo") return "🔥";
-  return "👤";
+  const h = (typeof HONOURS !== "undefined" && HONOURS[player]) || null;
+  if (!h) return "👤";
+  return "👑".repeat(h.crowns || 0) + "🔥".repeat(h.flames || 0) || "👤";
 }
 
 function render(c) {

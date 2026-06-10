@@ -1037,7 +1037,8 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
 .rules-centrepiece strong { color: var(--ember-glow); }
 
 /* ─── Teams page ────────────────────────────────────────────────────────────── */
-.team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .65rem; }
+/* Mobile: one big card per row (10 down). Desktop override below → 5 across. */
+.team-grid { display: grid; grid-template-columns: 1fr; gap: .8rem; }
 .team-card {
   background: linear-gradient(180deg, var(--bg-card-2), rgba(16,13,22,.6));
   border: 1px solid var(--border-card);
@@ -1069,9 +1070,13 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
 }
 .team-card .players { font-weight: 700; font-size: .92rem; line-height: 1.5; }
 .team-card .player-row {
-  display: flex; align-items: center; gap: .4rem;
+  display: flex; align-items: center; gap: .55rem;
   font-size: .88rem; padding: .15rem 0; color: var(--text-soft);
 }
+/* Badge sits in its own slot so the flex gap keeps clear space before the name,
+   and stacked honours (👑👑) stay together without crowding it. */
+.team-card .player-badge { flex: 0 0 auto; letter-spacing: .06em; line-height: 1; }
+.team-card .player-name { flex: 1 1 auto; min-width: 0; }
 
 /* ─── Hall of Fame ──────────────────────────────────────────────────────────── */
 .hof-panel {
@@ -1229,9 +1234,17 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
   .nav-more-btn { display: none !important; }
   .more-sheet, .more-overlay { display: none !important; }
   main { padding: 1.75rem; }
-  .team-grid { grid-template-columns: repeat(3, 1fr); }
 }
 @media (min-width: 860px) { main { padding: 2rem 1.5rem; } }
+
+/* Teams page goes full-width on desktop — two clean rows of five (10 teams)
+   instead of a 3-wide column stranded in dead space. Header is centred to match
+   the wider grid. Mobile stays at the single big-photo column. */
+@media (min-width: 768px) {
+  body.teams-page main,
+  body.teams-page .page-header { max-width: 1120px; margin-inline: auto; }
+  body.teams-page .team-grid { grid-template-columns: repeat(5, 1fr); gap: 1rem; }
+}
 
 /* ─── Reduced motion ────────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {

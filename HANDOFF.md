@@ -175,6 +175,13 @@ clear them before going live. No console errors on any page.
 - Renamed `teams/nathanial-toni.jpg` → `nathaniel-toni.jpg` (code derives from Sheet names).
 - **Preview cache tip**: browser caches `js/*.js`/`style.css` per origin — serving on a NEW port
   (e.g. 8765 vs 8761) gives a clean-cache origin instantly.
+- **Teams grid responsive rework**: `.team-grid` is now 1 column on mobile (big-photo stack) and
+  `repeat(5,1fr)` on desktop (`body.teams-page`, ≥768px) — two clean rows of five fills the 10-team
+  roster with no leftover cells. teams.html `<body class="teams-page">` widens `main` + `.page-header`
+  to 1120px centred so the grid no longer floats in dead space. `.team-grid` only appears on
+  teams.html, so the global mobile rule is safe.
+- **Honours emojis** (`playerIcon` in teams.html): 👑 Luca & Kenny (2nd-Ed champions), 🔥 Leonie
+  (On Fire champion) — was still pointing at old 2nd-Ed names (Lalaina/Zackary/Paolo).
 
 ## Open/optional ideas (not started)
 - Optional player avatars on the registration "field" cards / odds rows, same fallback pattern.

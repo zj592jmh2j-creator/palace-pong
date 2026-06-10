@@ -56,6 +56,22 @@ const REIGNING = {
   onfireCount: 5
 };
 
+// Accolade history (shown as badges on the Teams page). One 👑 per championship
+// won, one 🔥 per On Fire title — CUMULATIVE across editions. After each edition,
+// add/bump the winners here and a player's badges stack: win the 3rd Edition and
+// a returning champ shows 👑👑. Keyed by player first name (must match the names
+// in the Teams tab).
+const HONOURS = {
+  // 1st Edition — champions Zackary & Lalaina · On Fire Paolo
+  Zackary: { crowns: 1, flames: 0 },
+  Lalaina: { crowns: 1, flames: 0 },
+  Paolo:   { crowns: 0, flames: 1 },
+  // 2nd Edition — champions Luca & Kenny · On Fire Leonie
+  Luca:    { crowns: 1, flames: 0 },
+  Kenny:   { crowns: 1, flames: 0 },
+  Leonie:  { crowns: 0, flames: 1 }
+};
+
 // TEAMS is the team registry used across the site (labels, pools, betting,
 // standings, teams page). It is a `let` because `computeAll()` REPLACES it at
 // runtime with the teams read from the Sheet's "Teams" tab when that tab exists
