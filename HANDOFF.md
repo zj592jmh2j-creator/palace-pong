@@ -183,5 +183,32 @@ clear them before going live. No console errors on any page.
 - **Honours emojis** (`playerIcon` in teams.html): 👑 Luca & Kenny (2nd-Ed champions), 🔥 Leonie
   (On Fire champion) — was still pointing at old 2nd-Ed names (Lalaina/Zackary/Paolo).
 
+## 11 June — pre-live pass (Sheet PoolMatches/Knockout populated)
+The organiser filled the 3rd-Edition fixtures. Big changes to make it live-ready (all verified
+in-browser at registration + simulated live):
+- **Times & run order are now Sheet-driven.** `computeOrderOfPlay(poolMatches, bracket, koRows)`
+  reads PoolMatches `order` (1–20) + `matchStart`, then the knockouts QF1→F with their `matchStart`.
+  `config.SCHEDULE`/`scheduleById` are now DEAD (deprecated comment left); don't edit them.
+  Slot numbers shown are sequential #1–#25 from the run order.
+- **Case-insensitive team matching.** PoolMatches home/away were TitleCase ("Nathaniel-Toni") vs
+  lowercase ids ("nathaniel-toni") → standings came out EMPTY. `computeAll` now normalises
+  home/away via `matchTeamToken` before standings/bracket.
+- **Pools derived from fixtures.** Teams tab had blank `pool`, so `poolTeams()` was empty. `computeAll`
+  now fills each team's pool from which pool it actually plays in (Teams-tab `pool` still wins if set).
+- **Dynamic SF seeding (the Palace rule)** — `sfOpponent()` in compute.js, used by `computeBracket`:
+  A1 (SF1) plays QFW2 if both QF winners share a pool, else the Pool-B QF winner; B1 (SF2) plays
+  QFW1 if same pool, else the Pool-A QF winner. Verified all four pool combinations + end-to-end.
+- **Bracket ignores the Sheet's slot columns.** The Knockout tab's slot codes are shifted one column
+  (a 21–25 slot-number got typed into `slotHome`, pushing A2/B3 into slotAway/status). Matchups now
+  come from `BRACKET_STRUCTURE` + the seeding rule, so the shift is harmless. Result-entry columns
+  (status/cupsHome/cupsAway/suddenDeathWinner/matchStart) are correctly placed, so game-day entry works.
+  Status is normalised (only "live"/"final" count; placeholders → upcoming).
+- **Venue link.** `resolveTournament` now sets `venueUrl` (if Meta.venue is a URL) + `venueName`
+  (Meta key `venueName`, else plain venue text). Home hero renders a `.venue-link`; champion card
+  uses `venueName`. **Organiser must add Meta `venueName = Plage de Saint-Blaise`** (else link reads
+  "View location on map"). Meta `venue` currently holds the Google Maps URL.
+- Note: `betsLockISO = 12:00` but first match / countdown = 14:00 — betting locks 2h before kickoff
+  (confirm if intended; set betsLockISO to 14:00 to lock at the first throw instead).
+
 ## Open/optional ideas (not started)
 - Optional player avatars on the registration "field" cards / odds rows, same fallback pattern.

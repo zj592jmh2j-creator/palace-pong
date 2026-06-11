@@ -588,6 +588,11 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
 }
 .hero-details { font-size: .92rem; color: var(--text-soft); margin-top: .6rem; line-height: 1.9; }
 .hero-details strong { color: var(--text); }
+.venue-link {
+  color: var(--gold-light); font-weight: 700; text-decoration: none;
+  border-bottom: 1px solid var(--gold-hairline); padding-bottom: 1px;
+}
+.venue-link:active { color: var(--gold-bright); }
 
 .recap-cta {
   display: block; text-align: center; margin-bottom: 1rem;

@@ -95,25 +95,60 @@ function resolvePoolSlot(slot, standings) {
   return standings[pool]?.find(r => r.rank === rank)?.id ?? null;
 }
 
+// Dynamic semi-final seeding (the Palace rule) — keep each pool winner away
+// from their own pool's QF winner where possible. QFW1 = winner of QF1, etc.
+//   • A1 (SF1): QF winners from the SAME pool → A1 plays QFW2;
+//               SPLIT pools → A1 plays whichever QF winner is from Pool B.
+//   • B1 (SF2): SAME pool → B1 plays QFW1;
+//               SPLIT pools → B1 plays whichever QF winner is from Pool A.
+function sfOpponent(seat, winners) {
+  const q1 = winners.QF1 || null, q2 = winners.QF2 || null;
+  if (!q1 || !q2) return null;                  // both QFs must be decided first
+  const p1 = teamById(q1)?.pool || null;
+  const p2 = teamById(q2)?.pool || null;
+  const split = p1 && p2 && p1 !== p2;
+  if (seat === "A1") return split ? (p1 === "B" ? q1 : q2) : q2;
+  return split ? (p1 === "A" ? q1 : q2) : q1;    // seat "B1"
+}
+
 function computeBracket(koRows, standings, poolComplete = { A: true, B: true }) {
   // Map KO sheet rows by id
   const koMap = {};
   for (const row of koRows) { koMap[row.id] = row; }
 
-  const resolved = {}; // id → { ...bslot, homeId, awayId, winner, sheetRow }
+  const resolved = {}; // id → { ...bslot, homeId, awayId, winner }
   const winners  = {}; // id → winning team id
+
+  const seedTeam = code => {
+    const id = code ? resolveSlot(code, standings, winners, poolComplete) : null;
+    return { id, label: id ? teamLabel(id) : slotDisplayLabel(code) };
+  };
 
   for (const bslot of BRACKET_STRUCTURE) {
     const sheetRow = koMap[bslot.id] || {};
 
-    const home = resolveBracketSlot(sheetRow.slotHome, bslot.homeSlot, standings, winners, poolComplete);
-    const away = resolveBracketSlot(sheetRow.slotAway, bslot.awaySlot, standings, winners, poolComplete);
+    // Matchups are code-driven — the organiser never hand-seeds the bracket, so
+    // the Sheet's slot columns are ignored (and stay robust if they're shifted).
+    // QFs come from the fixed structure; SFs from the dynamic seeding rule once
+    // the QF winners are known (QF1/QF2 are processed first, so winners exist).
+    let home, away;
+    if (bslot.id === "SF1" || bslot.id === "SF2") {
+      home = seedTeam(bslot.homeSlot);                       // A1 / B1
+      const oppId = sfOpponent(bslot.id === "SF1" ? "A1" : "B1", winners);
+      away = oppId ? { id: oppId, label: teamLabel(oppId) }
+                   : { id: null, label: "QF Winner" };
+    } else {
+      home = seedTeam(bslot.homeSlot);
+      away = seedTeam(bslot.awaySlot);
+    }
     const homeId = home.id, awayId = away.id;
 
-    const status = sheetRow.status || "upcoming";
+    // Result fields read by header (correctly placed even if slot cols aren't).
+    const rawStatus = (sheetRow.status || "").trim().toLowerCase();
+    const status = (rawStatus === "live" || rawStatus === "final") ? rawStatus : "upcoming";
     const ch = parseInt(sheetRow.cupsHome, 10);
     const ca = parseInt(sheetRow.cupsAway, 10);
-    const sdw = sheetRow.suddenDeathWinner?.trim() || null;
+    const sdw = matchTeamToken((sheetRow.suddenDeathWinner || "").trim());
 
     let winner = null;
     if (status === "final" && homeId && awayId) {
@@ -244,43 +279,49 @@ function poolMatchesForDisplay(poolMatches, pool) {
 const PHASE_LABEL = { A: "Pool A", B: "Pool B", QF: "Quarter-Final",
                       SF: "Semi-Final", Final: "Final" };
 
-// The chronological run-of-show: the fixed SCHEDULE merged with live status,
-// scores, and resolved bracket teams. One uniform shape for every match.
-function computeOrderOfPlay(poolMatches, bracket) {
-  const poolById = {};
-  for (const m of poolMatches) poolById[m.id] = m;
+// The chronological run-of-show, driven entirely by the Sheet: pool matches in
+// their "order" column, then the knockouts (QF1→F), each carrying its own
+// matchStart time. Merged with live status, scores, and resolved bracket teams
+// into one uniform shape per match. (config.SCHEDULE is no longer used for this.)
+function computeOrderOfPlay(poolMatches, bracket, koRows) {
+  const koMap = {};
+  for (const r of (koRows || [])) koMap[r.id] = r;
+  const cups = v => (v !== "" && v != null && !isNaN(parseInt(v, 10))) ? parseInt(v, 10) : null;
 
-  return SCHEDULE.map(s => {
-    const b = bracket[s.id]; // present only for knockout ids
-    const base = { slot: s.slot, id: s.id, start: s.start, end: s.end };
-
-    if (b) {
+  // Pool matches in the Sheet's run order, carrying their own matchStart time.
+  const pool = [...poolMatches]
+    .sort((a, b) => (parseInt(a.order, 10) || 0) - (parseInt(b.order, 10) || 0))
+    .map(m => {
+      const p = (m.pool === "A" || m.pool === "B") ? m.pool : (m.id.startsWith("PA") ? "A" : "B");
+      const st = (m.status || "").trim().toLowerCase();
       return {
-        ...base, isKO: true,
-        phase: b.round, phaseLabel: PHASE_LABEL[b.round] || b.round,
-        homeId: b.homeId, awayId: b.awayId,
-        homeLabel: b.homeLabel, awayLabel: b.awayLabel,
-        status: b.status,
-        cupsHome: b.cupsHome, cupsAway: b.cupsAway,
-        winner: b.winner, suddenDeathWinner: b.suddenDeathWinner
+        id: m.id, isKO: false, start: (m.matchStart || "").trim(),
+        phase: p, phaseLabel: PHASE_LABEL[p],
+        homeId: m.home || null, awayId: m.away || null,
+        homeLabel: m.home ? teamLabel(m.home) : "TBD",
+        awayLabel: m.away ? teamLabel(m.away) : "TBD",
+        status: (st === "live" || st === "final") ? st : "upcoming",
+        cupsHome: cups(m.cupsHome), cupsAway: cups(m.cupsAway),
+        winner: null, suddenDeathWinner: null
       };
-    }
+    });
 
-    const m = poolById[s.id];
-    const pool = s.id.startsWith("PA") ? "A" : "B";
-    const ch = m && m.cupsHome !== "" && !isNaN(parseInt(m.cupsHome, 10)) ? parseInt(m.cupsHome, 10) : null;
-    const ca = m && m.cupsAway !== "" && !isNaN(parseInt(m.cupsAway, 10)) ? parseInt(m.cupsAway, 10) : null;
+  // Knockouts in their fixed run order; time from the Sheet's matchStart.
+  const KO_ORDER = ["QF1", "QF2", "SF1", "SF2", "F"];
+  const ko = KO_ORDER.filter(id => bracket[id]).map(id => {
+    const b = bracket[id];
     return {
-      ...base, isKO: false,
-      phase: pool, phaseLabel: PHASE_LABEL[pool],
-      homeId: m?.home ?? null, awayId: m?.away ?? null,
-      homeLabel: m ? teamLabel(m.home) : "TBD",
-      awayLabel: m ? teamLabel(m.away) : "TBD",
-      status: m?.status || "upcoming",
-      cupsHome: ch, cupsAway: ca,
-      winner: null, suddenDeathWinner: null
+      id, isKO: true, start: (koMap[id]?.matchStart || "").trim(),
+      phase: b.round, phaseLabel: PHASE_LABEL[b.round] || b.round,
+      homeId: b.homeId, awayId: b.awayId,
+      homeLabel: b.homeLabel, awayLabel: b.awayLabel,
+      status: b.status, cupsHome: b.cupsHome, cupsAway: b.cupsAway,
+      winner: b.winner, suddenDeathWinner: b.suddenDeathWinner
     };
   });
+
+  // Sequential slot numbers (#1..#25) follow the combined run order.
+  return [...pool, ...ko].map((m, i) => ({ slot: i + 1, ...m }));
 }
 
 // ── Event config (static TOURNAMENT defaults + live Meta overrides) ────────────
@@ -292,6 +333,11 @@ function resolveTournament(meta) {
   const phase = (g("phase") || t.phase || "registration").toLowerCase();
   t.phase = ["registration", "live", "complete"].includes(phase) ? phase : t.phase;
   if (g("venue"))         t.venue     = g("venue");
+  // Venue may be a maps URL. Render it as a link titled venueName (Meta key),
+  // falling back to a generic label; plain-text venues display as-is.
+  const venueRaw = (t.venue || "").trim();
+  t.venueUrl  = /^https?:\/\//i.test(venueRaw) ? venueRaw : "";
+  t.venueName = g("venueName") || (t.venueUrl ? "" : t.venue);
   if (g("dateText"))      t.date      = g("dateText");
   if (g("startTimeText")) t.startTime = g("startTimeText");
   t.countdownTargetISO = g("countdownTargetISO") || COUNTDOWN_DEFAULT_ISO;
@@ -466,17 +512,38 @@ function computeAll(data) {
   const sheetTeams = parseSheetTeams(data.teams);
   if (sheetTeams.length) TEAMS = sheetTeams;
 
-  const standings = computeAllStandings(data.poolMatches);
+  // Normalise PoolMatches team references to canonical team ids. The Sheet may
+  // type "Nathaniel-Toni" while the id is "nathaniel-toni" — without this,
+  // standings/head-to-head key on a name that doesn't exist and come out empty.
+  const poolMatches = (data.poolMatches || []).map(m => ({
+    ...m,
+    home: matchTeamToken(m.home) || m.home,
+    away: matchTeamToken(m.away) || m.away
+  }));
+
+  // Derive each team's pool from the fixtures when the Teams tab leaves it blank
+  // (who actually plays in Pool A vs Pool B is the single source of truth).
+  const poolByTeam = {};
+  for (const m of poolMatches) {
+    if (m.pool === "A" || m.pool === "B") {
+      if (m.home && !poolByTeam[m.home]) poolByTeam[m.home] = m.pool;
+      if (m.away && !poolByTeam[m.away]) poolByTeam[m.away] = m.pool;
+    }
+  }
+  TEAMS.forEach(t => { if (!t.pool && poolByTeam[t.id]) t.pool = poolByTeam[t.id]; });
+
+  const standings = computeAllStandings(poolMatches);
 
   // Pool completion flags — a pool's slots only seed once all 10 are final.
-  const poolAFinal = data.poolMatches.filter(m => m.pool === "A" && m.status === "final").length === 10;
-  const poolBFinal = data.poolMatches.filter(m => m.pool === "B" && m.status === "final").length === 10;
+  const isFinal = m => (m.status || "").trim().toLowerCase() === "final";
+  const poolAFinal = poolMatches.filter(m => m.pool === "A" && isFinal(m)).length === 10;
+  const poolBFinal = poolMatches.filter(m => m.pool === "B" && isFinal(m)).length === 10;
 
   const bracket     = computeBracket(data.knockout, standings, { A: poolAFinal, B: poolBFinal });
   const onfire      = computeOnFire(data.onfire);
-  const poolA       = poolMatchesForDisplay(data.poolMatches, "A");
-  const poolB       = poolMatchesForDisplay(data.poolMatches, "B");
-  const orderOfPlay = computeOrderOfPlay(data.poolMatches, bracket);
+  const poolA       = poolMatchesForDisplay(poolMatches, "A");
+  const poolB       = poolMatchesForDisplay(poolMatches, "B");
+  const orderOfPlay = computeOrderOfPlay(poolMatches, bracket, data.knockout);
   const live        = orderOfPlay.filter(m => m.status === "live");
   const next        = orderOfPlay.filter(m => m.status === "upcoming").slice(0, 3);
 
@@ -540,7 +607,7 @@ function computeAll(data) {
     onfire: onfireWinner[0] || null
   };
 
-  const recap = computeRecap(data.poolMatches, data.knockout, data.onfire);
+  const recap = computeRecap(poolMatches, data.knockout, data.onfire);
 
   return { standings, bracket, onfire, poolA, poolB, orderOfPlay, live, next,
            poolAFinal, poolBFinal,

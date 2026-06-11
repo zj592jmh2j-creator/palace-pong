@@ -92,7 +92,10 @@ let TEAMS = [
   { id: "paolo-malik",     pool: "B", players: ["Paolo", "Malik"] }
 ];
 
-// Hardcoded bracket topology — organiser never edits this
+// Hardcoded bracket topology — organiser never edits this. NOTE: the SF away
+// slots below are nominal; the actual semi-final pairing is set dynamically by
+// the Palace seeding rule in compute.js (sfOpponent) once the QF winners and
+// their pools are known. QF matchups and SF home seeds (A1/B1) are as listed.
 const BRACKET_STRUCTURE = [
   { id: "QF1", round: "QF",    label: "Quarter-Final 1", homeSlot: "A2", awaySlot: "B3" },
   { id: "QF2", round: "QF",    label: "Quarter-Final 2", homeSlot: "B2", awaySlot: "A3" },
@@ -101,7 +104,9 @@ const BRACKET_STRUCTURE = [
   { id: "F",   round: "Final", label: "The Final",       homeSlot: "winnerSF1", awaySlot: "winnerSF2" }
 ];
 
-// Fixed order of play + scheduled times — known in advance, never edited live.
+// DEPRECATED — order of play and times now come from the Sheet (PoolMatches
+// "order"/"matchStart" + Knockout "matchStart"). Kept only for reference; not
+// read anywhere. Edit the Sheet, not this, to change the run order or times.
 // `id` matches the match id in the Sheet (Final = bracket id "F").
 const SCHEDULE = [
   { slot: 1,  id: "PA7",   start: "12:30 PM", end: "12:42 PM" },

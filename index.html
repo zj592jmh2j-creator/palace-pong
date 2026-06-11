@@ -120,7 +120,15 @@ function render(c) {
   setText("hero-edition", t.edition);
   setText("hero-date", t.date);
   setText("hero-time", t.startTime);
-  setText("hero-venue", t.venue);
+  // Venue: a tappable map link when Meta.venue is a URL, plain text otherwise.
+  const venueEl = document.getElementById("hero-venue");
+  if (venueEl) {
+    if (t.venueUrl) {
+      venueEl.innerHTML = `<a class="venue-link" href="${t.venueUrl}" target="_blank" rel="noopener">${t.venueName || "View location on map"}</a>`;
+    } else {
+      venueEl.textContent = t.venue;
+    }
+  }
 
   // Toggle registration vs live sections based on tournament phase
   const regEl  = document.getElementById("registration-sections");
@@ -394,7 +402,7 @@ function drawChampionCard(c) {
       x.fillText("On Fire Champion: " + c.results.onfire, W / 2, 894);
     }
     x.fillStyle = "#8A8290"; x.font = "400 26px Arial, sans-serif";
-    x.fillText(c.tournament.venue || "The Palace", W / 2, 980);
+    x.fillText(c.tournament.venueName || "The Palace", W / 2, 980);
     finish();
   };
 
