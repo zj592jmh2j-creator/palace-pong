@@ -339,8 +339,16 @@ function resolveTournament(meta) {
   t.venueUrl  = /^https?:\/\//i.test(venueRaw) ? venueRaw : "";
   t.venueName = g("venueName") || (t.venueUrl ? "" : t.venue);
   if (g("dateText"))      t.date      = g("dateText");
-  if (g("startTimeText")) t.startTime = g("startTimeText");
   t.countdownTargetISO = g("countdownTargetISO") || COUNTDOWN_DEFAULT_ISO;
+  // Kickoff time shown in the hero: explicit Meta startTimeText wins; otherwise
+  // derive it from the countdown target so the two never drift apart (e.g. a
+  // 14:00 countdownTargetISO shows "14:00"). Falls back to the config default.
+  if (g("startTimeText")) {
+    t.startTime = g("startTimeText");
+  } else {
+    const d = parseEventDate(t.countdownTargetISO);
+    if (!isNaN(d.getTime())) t.startTime = d.toTimeString().slice(0, 5); // "HH:MM"
+  }
   const spots = parseInt(g("spotsTotal"), 10);
   t.spotsTotal = spots > 0 ? spots : (t.spotsTotal || 20);
   let poll = g("pollUrl") || POLL_URL || "";
