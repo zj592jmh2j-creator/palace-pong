@@ -18,7 +18,7 @@ punctuation stripped, joined by a hyphen  →  player1-player2.
   4. Zackary & Tamu     → teams/zackary-tamu.jpg
   5. Ian & Lalaina      → teams/ian-lalaina.jpg
   6. Alwin & Kevin      → teams/alwin-kevin.jpg
-  7. Paolo & Amr        → teams/paolo-amr.jpg
+  7. Rita & Amr         → teams/rita-amr.jpg   (Paolo dropped out; Rita replaced him)
   8. Ale & Marcin       → teams/ale-marcin.jpg
   9. Martin & Sayor     → teams/martin-sayor.jpg
  10. Nathaniel & Toni   → teams/nathaniel-toni.jpg
