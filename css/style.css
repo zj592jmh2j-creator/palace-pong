@@ -918,6 +918,59 @@ main { padding: 1rem; max-width: 700px; margin: 0 auto; }
 .odds-card-link { display: inline-block; margin-top: .8rem; font-size: .85rem; font-weight: 600; color: var(--gold); text-decoration: none; min-height: 44px; line-height: 44px; }
 .odds-card-link:active { color: var(--gold-bright); }
 
+/* ─── Thank You tribute (Home, phase complete) ──────────────────────────────── */
+.thankyou {
+  position: relative; text-align: center;
+  background: linear-gradient(180deg, var(--gold-subtle), rgba(16,13,22,.6));
+  border: 1px solid var(--gold-hairline); border-radius: var(--radius);
+  padding: 1.5rem 1.1rem; margin-bottom: 1rem;
+  box-shadow: var(--shadow-card);
+}
+.ty-eyebrow {
+  font-size: .62rem; font-weight: 800; letter-spacing: .18em; text-transform: uppercase;
+  color: var(--gold-dim);
+}
+.ty-title {
+  font-family: var(--serif); font-weight: 800; line-height: 1;
+  font-size: clamp(2.2rem, 9vw, 3rem); margin: .2rem 0 1rem;
+  background: linear-gradient(180deg, var(--gold-bright), var(--gold) 70%, var(--gold-dim));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent; color: transparent;
+}
+.ty-photo {
+  margin: 0 0 1.1rem; border-radius: var(--radius-sm); overflow: hidden;
+  border: 1px solid var(--gold-hairline); box-shadow: 0 16px 40px -22px rgba(0,0,0,.9);
+}
+.ty-photo img { display: block; width: 100%; height: auto; }
+.ty-lead {
+  font-size: .92rem; color: var(--text-soft); line-height: 1.65;
+  max-width: 34rem; margin: 0 auto 1.1rem;
+}
+.ty-memories {
+  display: flex; flex-direction: column; gap: .55rem;
+  text-align: left; max-width: 34rem; margin: 0 auto;
+}
+.ty-memory {
+  display: flex; gap: .65rem; align-items: flex-start;
+  padding: .7rem .8rem; border-radius: 10px;
+  background: rgba(255,255,255,.035); border: 1px solid var(--hairline);
+  font-size: .88rem; color: var(--text-soft); line-height: 1.55;
+}
+.ty-memory strong { color: var(--text); }
+.ty-memory em { color: var(--gold-light); font-style: italic; }
+.ty-ico { flex: 0 0 auto; font-size: 1.15rem; line-height: 1.4; }
+.ty-ed {
+  display: inline-block; font-size: .58rem; font-weight: 800; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--gold-light);
+  background: var(--gold-subtle); border: 1px solid var(--gold-hairline);
+  padding: .1rem .4rem; border-radius: 20px; margin-left: .25rem; white-space: nowrap;
+}
+.ty-signoff {
+  margin-top: 1.25rem; font-family: var(--serif); font-size: 1.15rem;
+  color: var(--gold-light);
+}
+.ty-signoff strong { color: var(--gold-bright); }
+
 /* Odds page — taller betting lines (same board look + payout + Back button) */
 .odds-line.bet { align-items: flex-start; gap: .6rem; padding: .7rem .75rem; }
 .odds-line.bet .odds-line-rank { margin-top: .05rem; }

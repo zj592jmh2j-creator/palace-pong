@@ -24,6 +24,8 @@
   <link rel="apple-touch-icon" href="palace-logo.png">
   <link rel="manifest" href="manifest.json">
   <link rel="stylesheet" href="css/style.css">
+  <!-- Calligraphy face for the champion share card (canvas) -->
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 </head>
 <body>
@@ -78,8 +80,40 @@
   <!-- CHAMPION SHARE CARD (phase complete) -->
   <div id="champion-share" hidden></div>
 
-  <!-- PALACE ODDS snapshot (live/complete) -->
+  <!-- PALACE ODDS snapshot (registration/live; replaced by Thank You once complete) -->
   <div id="home-odds" hidden></div>
+
+  <!-- THANK YOU — closing tribute, shown when the tournament is complete -->
+  <div id="home-thankyou" hidden>
+    <div class="thankyou">
+      <div class="ty-eyebrow">The Palace · Three Editions</div>
+      <h2 class="ty-title serif">Thank You</h2>
+      <div class="ty-photo">
+        <img src="everyone.jpg" alt="The competitors of The Palace, all three editions"
+             loading="lazy" onerror="this.closest('.ty-photo').remove()">
+      </div>
+      <p class="ty-lead">To everyone who showed up to compete, laugh, and make memories across all
+        three editions — it was something special. A rooftop, a beach, a folding table, and a crown
+        on the line.</p>
+      <div class="ty-memories">
+        <div class="ty-memory">
+          <span class="ty-ico">🏆</span>
+          <div><strong>Paolo &amp; Lizzy's</strong> run to the Final — and that unforgettable
+            <em>"Lautaro Martínez"</em> celebration. <span class="ty-ed">1st Edition</span></div>
+        </div>
+        <div class="ty-memory">
+          <span class="ty-ico">🧠</span>
+          <div><strong>Tamu vs Leonie</strong> — and the mental toll of Leonie's French mind games.</div>
+        </div>
+        <div class="ty-memory">
+          <span class="ty-ico">🎯</span>
+          <div>The President himself showing us how it's done — <strong>Sayor</strong> sinking balls
+            and supplying his own sound effects. <span class="ty-ed">3rd Edition</span></div>
+        </div>
+      </div>
+      <div class="ty-signoff">Thank you to all. <strong>Until next time.</strong> 👑</div>
+    </div>
+  </div>
 
   <!-- LIVE MODE sections (hidden during registration) -->
   <div id="live-sections" hidden>
@@ -185,9 +219,16 @@ function render(c) {
     if (tba) notify.href = whatsappUrl("Hi Sayor, ping me when The Palace venue is announced.");
   }
 
-  // Palace Odds — live competitor odds (replaces the old "story" card; shows in all phases)
+  // Once the tournament is complete, the betting card gives way to the Thank You
+  // tribute. Betting still shows during registration/live.
+  const thankYou = document.getElementById("home-thankyou");
+  if (thankYou) thankYou.hidden = !c.complete;
+
+  // Palace Odds — live competitor odds (replaces the old "story" card; registration + live)
   const homeOdds = document.getElementById("home-odds");
-  if (homeOdds) {
+  if (homeOdds && c.complete) {
+    homeOdds.hidden = true;
+  } else if (homeOdds) {
     homeOdds.hidden = false;
     const m = c.odds.winner;
     const settled = !!m.settlement && !c.betting.open;
@@ -291,7 +332,7 @@ function render(c) {
       share.innerHTML = `<div class="card" style="text-align:center">
         <div class="card-title" style="justify-content:center"><span class="icon">📸</span>Share the moment</div>
         <p style="font-size:.85rem;color:var(--text-muted);margin-bottom:.7rem">A champions card for the group chat.</p>
-        <button class="signup-btn" id="champion-card-btn" type="button">📸 Get the champion card</button>
+        <button class="signup-btn" id="champion-card-btn" type="button">📸 GET THE CHAMPION CARD</button>
         <a href="recap.html" style="display:block;margin-top:.8rem;font-size:.85rem;color:var(--gold);text-decoration:none">View tournament recap →</a>
       </div>`;
       const btn = document.getElementById("champion-card-btn");
@@ -359,57 +400,117 @@ function render(c) {
 let prevFire = {};
 
 // Champion share card — 1080×1080 PNG drawn on canvas, no libraries.
+// Champion share card — a portrait JPEG for the group chat. Renders at 2× for a
+// crisp (non-pixelated) export, in calligraphy, with the winners' photo + the
+// whole-tournament group photo. Winners + On Fire only — no scores.
 function drawChampionCard(c) {
   const winnerId = c.bracket?.F?.winner;
   if (!winnerId) return;
-  const W = 1080, H = 1080;
+  const SCALE = 2, W = 1080, H = 1350;          // 2× → 2160×2700 export
   const canvas = document.createElement("canvas");
-  canvas.width = W; canvas.height = H;
+  canvas.width = W * SCALE; canvas.height = H * SCALE;
   const x = canvas.getContext("2d");
+  x.scale(SCALE, SCALE);
   x.textAlign = "center";
 
-  const finish = () => canvas.toBlob(b => {
-    const u = URL.createObjectURL(b);
-    const a = document.createElement("a");
-    a.href = u; a.download = "palace-3rd-edition-champions.png";
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(u), 3000);
-  }, "image/png");
+  const loadImg = src => new Promise(res => { const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+  const loadFont = spec => (window.FontFace && document.fonts) ? document.fonts.load(spec).catch(() => {}) : Promise.resolve();
 
-  const g = x.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "#0A0810"); g.addColorStop(1, "#07060B");
-  x.fillStyle = g; x.fillRect(0, 0, W, H);
-  const rg = x.createRadialGradient(W / 2, 330, 40, W / 2, 330, 560);
-  rg.addColorStop(0, "rgba(200,162,74,.24)"); rg.addColorStop(1, "rgba(200,162,74,0)");
-  x.fillStyle = rg; x.fillRect(0, 0, W, H);
+  Promise.all([
+    loadImg("champ-3rd.jpg"), loadImg("everyone.jpg"), loadImg("palace-logo.png"),
+    loadFont('64px "Great Vibes"'), loadFont('700 32px "Playfair Display"')
+  ]).then(([champ, group, logo]) => draw(champ, group, logo));
 
-  const drawText = () => {
-    x.fillStyle = "#7A6230"; x.font = "600 32px Georgia, serif";
-    x.fillText("C H A M P I O N S   O F   T H E   P A L A C E", W / 2, 590);
-    x.fillStyle = "#8A6E38"; x.font = "600 28px Arial, sans-serif";
-    x.fillText(("3rd Edition · " + (c.tournament.date || "")).toUpperCase(), W / 2, 636);
-    const tg = x.createLinearGradient(0, 670, 0, 770);
+  function roundRect(dx, dy, dw, dh, r) {
+    x.beginPath(); x.moveTo(dx + r, dy);
+    x.arcTo(dx + dw, dy, dx + dw, dy + dh, r);
+    x.arcTo(dx + dw, dy + dh, dx, dy + dh, r);
+    x.arcTo(dx, dy + dh, dx, dy, r);
+    x.arcTo(dx, dy, dx + dw, dy, r); x.closePath();
+  }
+  function coverImage(img, dx, dy, dw, dh, r) {
+    x.save(); roundRect(dx, dy, dw, dh, r); x.clip();
+    if (img) {
+      const s = Math.max(dw / img.width, dh / img.height);
+      const sw = dw / s, sh = dh / s;
+      x.drawImage(img, (img.width - sw) / 2, (img.height - sh) / 2, sw, sh, dx, dy, dw, dh);
+    } else {
+      const lg = x.createLinearGradient(dx, dy, dx + dw, dy + dh);
+      lg.addColorStop(0, "rgba(200,162,74,.20)"); lg.addColorStop(1, "rgba(26,22,38,.95)");
+      x.fillStyle = lg; x.fillRect(dx, dy, dw, dh);
+    }
+    x.restore();
+    x.save(); roundRect(dx, dy, dw, dh, r); x.lineWidth = 3; x.strokeStyle = "rgba(200,162,74,.55)"; x.stroke(); x.restore();
+  }
+  function spaced(text, cx, cy, gap) {
+    const chars = [...text], w = chars.map(ch => x.measureText(ch).width + gap);
+    let cur = cx - (w.reduce((a, b) => a + b, 0) - gap) / 2;
+    const prev = x.textAlign; x.textAlign = "left";
+    chars.forEach((ch, i) => { x.fillText(ch, cur, cy); cur += w[i]; });
+    x.textAlign = prev;
+  }
+  function fitScript(text, maxW) {
+    let sz = 132;
+    do { x.font = sz + 'px "Great Vibes", "Playfair Display", cursive'; sz -= 4; }
+    while (x.measureText(text).width > maxW && sz > 48);
+  }
+
+  function draw(champ, group, logo) {
+    const g = x.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#0C0A14"); g.addColorStop(.5, "#0A0810"); g.addColorStop(1, "#07060B");
+    x.fillStyle = g; x.fillRect(0, 0, W, H);
+    const rg = x.createRadialGradient(W / 2, 360, 40, W / 2, 360, 660);
+    rg.addColorStop(0, "rgba(200,162,74,.20)"); rg.addColorStop(1, "rgba(200,162,74,0)");
+    x.fillStyle = rg; x.fillRect(0, 0, W, H);
+
+    if (logo) { const s = 116; x.drawImage(logo, (W - s) / 2, 46, s, s); }
+
+    x.textAlign = "center"; x.fillStyle = "#C8A24A";
+    x.font = '700 30px "Playfair Display", Georgia, serif';
+    spaced("CHAMPIONS OF THE PALACE", W / 2, 208, 5);
+    x.fillStyle = "#8A6E38"; x.font = '600 24px "Inter", Arial, sans-serif';
+    x.fillText("3rd Edition · " + (c.tournament.date || ""), W / 2, 246);
+
+    // Winners' photo (portrait)
+    const pw = 440, ph = 500, px = (W - pw) / 2, py = 286;
+    coverImage(champ, px, py, pw, ph, 26);
+
+    // Champions' name — calligraphy, gold
+    fitScript(teamLabel(winnerId), W - 150);
+    const ny = py + ph + 116;
+    const tg = x.createLinearGradient(0, ny - 96, 0, ny + 12);
     tg.addColorStop(0, "#F5DD9A"); tg.addColorStop(1, "#C8A24A");
-    x.fillStyle = tg; x.font = "800 80px Georgia, serif";
-    x.fillText(teamLabel(winnerId), W / 2, 752);
-    const f = c.bracket.F;
-    if (f.cupsHome != null && f.cupsAway != null) {
-      x.fillStyle = "#F2EEE6"; x.font = "600 40px Arial, sans-serif";
-      x.fillText("Final  " + f.cupsHome + " – " + f.cupsAway, W / 2, 826);
-    }
-    if (c.results.onfire) {
-      x.fillStyle = "#FF8C42"; x.font = "600 38px Arial, sans-serif";
-      x.fillText("On Fire Champion: " + c.results.onfire, W / 2, 894);
-    }
-    x.fillStyle = "#8A8290"; x.font = "400 26px Arial, sans-serif";
-    x.fillText(c.tournament.venueName || "The Palace", W / 2, 980);
-    finish();
-  };
+    x.fillStyle = tg; x.textAlign = "center";
+    x.fillText(teamLabel(winnerId), W / 2, ny);
 
-  const img = new Image();
-  img.onload = () => { const s = 300; x.drawImage(img, (W - s) / 2, 150, s, s); drawText(); };
-  img.onerror = drawText;
-  img.src = "palace-logo.png";
+    // On Fire
+    if (c.results.onfire) {
+      x.fillStyle = "#FF8C42"; x.font = '600 34px "Inter", Arial, sans-serif';
+      x.fillText("🔥 On Fire Champion · " + c.results.onfire, W / 2, ny + 66);
+    }
+
+    // Group photo (landscape band) + caption overlay
+    const gw = 920, gh = 296, gx = (W - gw) / 2, gy = ny + 110;
+    coverImage(group, gx, gy, gw, gh, 26);
+    x.save(); roundRect(gx, gy, gw, gh, 26); x.clip();
+    const cg = x.createLinearGradient(0, gy + gh - 120, 0, gy + gh);
+    cg.addColorStop(0, "rgba(7,6,11,0)"); cg.addColorStop(1, "rgba(7,6,11,.88)");
+    x.fillStyle = cg; x.fillRect(gx, gy + gh - 120, gw, 120);
+    x.restore();
+    x.fillStyle = "#F2EEE6"; x.font = '600 26px "Inter", Arial, sans-serif';
+    x.fillText("Three editions · Thank you to all", W / 2, gy + gh - 36);
+
+    x.fillStyle = "#8A8290"; x.font = '400 24px "Inter", Arial, sans-serif';
+    x.fillText(c.tournament.venueName || "The Palace", W / 2, H - 30);
+
+    canvas.toBlob(b => {
+      const u = URL.createObjectURL(b);
+      const a = document.createElement("a");
+      a.href = u; a.download = "palace-3rd-edition-champions.jpg";
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(u), 3000);
+    }, "image/jpeg", 0.92);
+  }
 }
 
 initPage(render);

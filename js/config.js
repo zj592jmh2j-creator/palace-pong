@@ -50,10 +50,10 @@ const REGISTRATION_MODE = TOURNAMENT.phase === "registration";
 // are cleared / TEAMS is replaced, a bracket-derived banner would vanish.)
 // Matches the Hall of Fame. Update after each edition.
 const REIGNING = {
-  edition: "2nd Edition",
-  team: "Luca & Kenny",
-  onfire: "Leonie",
-  onfireCount: 5
+  edition: "3rd Edition",
+  team: "Ale & Marcin",
+  onfire: "Xavier",
+  onfireCount: 8
 };
 
 // Accolade history (shown as badges on the Teams page). One 👑 per championship
@@ -69,7 +69,11 @@ const HONOURS = {
   // 2nd Edition — champions Luca & Kenny · On Fire Leonie
   Luca:    { crowns: 1, flames: 0 },
   Kenny:   { crowns: 1, flames: 0 },
-  Leonie:  { crowns: 0, flames: 1 }
+  Leonie:  { crowns: 0, flames: 1 },
+  // 3rd Edition — champions Ale & Marcin · On Fire Xavier
+  Ale:     { crowns: 1, flames: 0 },
+  Marcin:  { crowns: 1, flames: 0 },
+  Xavier:  { crowns: 0, flames: 1 }
 };
 
 // TEAMS is the team registry used across the site (labels, pools, betting,

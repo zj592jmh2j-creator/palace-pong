@@ -129,6 +129,22 @@ clear them before going live. No console errors on any page.
    → scoreboard, NOW/NEXT bar.
 3. `Meta.phase = complete` after the Final → champion share card + recap page appear.
 
+## To complete an edition (Sheet + permanent records)
+- **Sheet:** set `Meta.phase = complete`. Ensure the Knockout `F` row resolves a winner —
+  the loser's cups MUST be `0` (the model reads cups as *remaining*; two non-zero values =
+  a draw and NO champion is crowned). If the Final was tied at the buzzer, put the winning team
+  code in `suddenDeathWinner` instead. OnFire tab's top player (highest count) becomes On Fire champ.
+- **Permanent records (code, not Sheet-derived):** after each edition update (a) the Hall of Fame
+  panel in `halloffame.html` (add a new reigning panel on top), (b) `HONOURS` in config.js (+1 👑
+  each champion, +1 🔥 the On Fire champ — stacks across editions), (c) `REIGNING` in config.js
+  (drives the next registration's banner), (d) the On Fire "Past Champions" list in `onfire.html`.
+  Champion photo: `champ-<n>.jpg` (Hall of Fame frame falls back to `teams/<id>.jpg`).
+  *Done for the 3rd Edition: champions Ale & Marcin, On Fire Xavier (8), venue Plage de Saint-Blaise.*
+- **Champion share card** (`drawChampionCard` in index.html): renders at 2× → crisp JPEG, calligraphy
+  names (Great Vibes font, loaded via a `<link>` in the index head), winners' photo (`champ-3rd.jpg`)
+  + group photo (`everyone.jpg`), winners + On Fire only (no scores). Needs both photos uploaded.
+- **Home Thank You** tribute + the group photo (`everyone.jpg`, compressed) show in `complete` phase.
+
 ## Deploy notes
 - GitHub Pages from repo root. Upload ALL files incl. images + manifest.json + og-image.png.
 - **og:url / og:image use a `YOURNAME` placeholder** in every HTML `<head>` — find-and-replace
